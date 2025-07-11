@@ -8,17 +8,17 @@ import {
 } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCdPliqfHrf2QDKedB3XSDn4cvFIU6rz40",
-  authDomain: "geniex-d6c8c.firebaseapp.com",
-  projectId: "geniex-d6c8c",
-  storageBucket: "geniex-d6c8c.appspot.com",
-  messagingSenderId: "982353981292",
-  appId: "1:982353981292:web:54a071a2e5018f661bcd49"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+const provider = new GoogleAuthProvider();3
 
 
 

@@ -4,7 +4,10 @@ from pymongo import MongoClient
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from deep_translator import GoogleTranslator as Translator
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 import time
 
 
@@ -15,6 +18,9 @@ from bson import ObjectId
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/genie_db"
 mongo = PyMongo(app)
+
+gem_api_key = os.getenv("API_KEY")
+jwt_secret = os.getenv("JWT_SECRET")
 
 CORS(app, origins=["http://localhost:5173"])
 
@@ -33,7 +39,7 @@ chats_collection.update_many(
 )
 
 # Gemini API setup
-genai.configure(api_key="AIzaSyBqGrIASvFUWs3NUYhTx_HjLEnI1G4U-2M")
+genai.configure(api_key= gem_api_key)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ----------------------------------------

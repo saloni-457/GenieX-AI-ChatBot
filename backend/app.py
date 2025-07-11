@@ -5,6 +5,8 @@ from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from deep_translator import GoogleTranslator as Translator
 from dotenv import load_dotenv
+from bson import SON
+
 import os
 
 load_dotenv()

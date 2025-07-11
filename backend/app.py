@@ -27,7 +27,7 @@ mongo = PyMongo(app)
 
 
 
-CORS(app, origins=["http://localhost:5173"])
+CORS(app, origins=["http://localhost:5173", "https://genix-frontend.netlify.app"])
 
 # CORS(app)
 

@@ -338,56 +338,7 @@ const exportChatAsPDF = () => {
     .save();
 };
 
-// const sendMessage = async () => {
-//   if (!input.trim()) return;
 
-//   const newMessages = [...messages, { sender: "user", text: input }];
-//   setMessages(newMessages);
-//   setInput("");
-//   setIsTyping(true);
-
-//   const safeFolder = selectedFolder || "Default"; // ✅ fallback here
-
-//   try {
-//     const res = await fetch("http://localhost:5000/chat", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({
-//         message: input,
-//         language: selectedLanguage
-//       }),
-//     });
-
-//     const data = await res.json();
-//     setIsTyping(false);
-
-//     const finalMessages = [...newMessages, { sender: "bot", text: data.response }];
-//     setMessages(finalMessages);
-//     if (voiceEnabled) {
-//       speakText(data.response);
-//     }
-
-//     if (user && finalMessages.length > 1) {
-//       await fetch("http://localhost:5000/save-chat", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//           userId: user.uid,
-//           messages: finalMessages,
-//           timestamp: Date.now(),
-//           folder: safeFolder  // ✅ use safeFolder instead of selectedFolder
-//         }),
-//       });
-//       refreshSidebar();
-//     }
-
-//   } catch (err) {
-//     setIsTyping(false);
-//     const finalMessages = [...newMessages, { sender: "bot", text: "Something went wrong. Please try again." }];
-//     setMessages(finalMessages);
-//     console.error("❌ Error during sendMessage:", err);
-//   }
-// };
 
 // ⬛ Dynamic folder icon selection
 const folderIcons = {

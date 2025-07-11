@@ -15,12 +15,15 @@ import google.generativeai as genai
 
 from bson import ObjectId
 
-app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/genie_db"
-mongo = PyMongo(app)
-
 gem_api_key = os.getenv("API_KEY")
 jwt_secret = os.getenv("JWT_SECRET")
+mongo_uri = os.getenv("MONGO_URI")
+
+app = Flask(__name__)
+app.config["MONGO_URI"] = mongo_uri
+mongo = PyMongo(app)
+
+
 
 CORS(app, origins=["http://localhost:5173"])
 

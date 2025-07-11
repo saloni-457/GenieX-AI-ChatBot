@@ -30,9 +30,12 @@ CORS(app, origins=["http://localhost:5173"])
 # CORS(app)
 
 # MongoDB connection
-client = MongoClient("mongodb://localhost:27017/")
-db = client["genie_db"]
-chats_collection = db["chats"]
+# client = MongoClient("mongodb://localhost:27017/")
+# db = client["genie_db"]
+# chats_collection = db["chats"]
+
+chats_collection = mongo.db.chats
+
 
 
 # Fix chats with missing folder

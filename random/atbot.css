@@ -1,0 +1,373 @@
+
+/* General Reset */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body */
+body {
+    font-family: Arial, sans-serif;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+body.light-theme {
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+body.dark-theme {
+    background-color: #1e1e1e;
+    color: #f5f5f5;
+}
+
+
+/* Navbar Styling */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff; /* White background for the navbar */
+    padding: 10px 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+/* Left Section (Logo and Brand Name) */
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.logo {
+    width: 35px; /* Adjust logo size */
+    height: 35px;
+    object-fit: contain; /* Maintain aspect ratio */
+}
+
+.brand-name {
+    font-size: 20px;
+    font-weight: bold;
+    color: #000; /* Black text color */
+}
+
+body.dark-theme .navbar {
+    /* background-color: #333; */
+    color: #1e1e1e;
+
+}
+
+
+/* Toggle Switch Container */
+.theme-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.user-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-email {
+  font-weight: bold;
+  color: #4a4a4a;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+body.dark-theme .user-email {
+  color: #f5f5f5;
+}
+
+.user-controls button {
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: none;
+  background-color: #8221e2;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.user-controls button:hover {
+  background-color: #681ec2;
+}
+
+.brand-name {
+  font-size: 22px;
+  font-family: 'cursive';
+  margin-left: 8px;
+  color: #3c3c3c;
+}
+
+body.dark-theme .brand-name {
+  color: #f5f5f5;
+}
+
+
+/* Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 25px;
+}
+
+/* Hide Default Checkbox */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* Slider (Toggle Background) */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 25px;
+}
+
+/* Slider (Circle) */
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 200px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+.navbar h1{
+    color: #1e1e1e;
+    align-items: center;
+    margin-left: 1043px;
+    font-style: bold;
+    font-family: cursive;
+}
+
+/* Checked State */
+.switch input:checked + .slider {
+    background-color: #e2cdf7;
+}
+
+.switch input:checked + .slider:before {
+    transform: translateX(25px);
+}
+
+
+/* Main Content */
+.main-content {
+    display: flex;
+    height: 90vh;
+}
+
+/* Sidebar Container */
+.sidebar-container {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.sidebar.closed {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+/* Sidebar */
+.sidebar {
+    width: 500px;
+    background-color: #e2cdf7;
+    padding: 20px;
+    overflow-y: auto;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar.closed {
+    transform: translateX(-300px); /* Slide the sidebar out of view */
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Sidebar Toggle Button */
+#sidebar-toggle {
+    position: fixed;
+    top: 5px;
+    left: 10px; /* Positioned outside the sidebar */
+    background-color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    transition: left 0.3s ease;
+}
+
+#sidebar-toggle.sidebar-hidden {
+    left: 10px; /* Move to 10px from the left when sidebar is hidden */
+}
+
+#sidebar-toggle:hover {
+    background-color:#e2cdf7;
+    color : white;
+}
+
+
+body.dark-theme #sidebar-toggle {
+    background-color: #807e7e;
+    color: #f5f5f5;
+}
+body.dark-theme #sidebar-toggle:hover {
+    background-color:#0b0215;
+    color : white;
+}
+
+.sidebar h2 {
+    margin-bottom: 20px;
+    margin-left: 2px;
+    font-family: cursive;
+    color: #1e1e1e;
+}
+body.dark-theme .sidebar h2 {
+    margin-bottom: 20px;
+    margin-left: 2px;
+    font-family: cursive;
+    color: #1e1e1e;
+color: #f5f5f5;}
+
+body.dark-theme .sidebar {
+    background-color: #333;
+    color: whitesmoke;
+}
+
+body.dark-theme .sidebar ul li {
+    background-color: #444;
+}
+
+/* Chat Area */
+.chat-area {
+    flex-grow: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+#messages {
+    display: flex;
+    /* flex-grow: 1; */
+    overflow-y: auto;
+    align-items:center;
+    flex-direction:column;
+    padding: 10px;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.user-message {
+    background-color: rgb(130, 13, 226);
+    color: white;
+    padding: 10px;
+    border-radius: 15px;
+    font-family:cursive;
+    text-align: left;
+    display: block;
+    max-width: 60%; 
+   
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    word-wrap: break-word; 
+
+}
+
+
+.bot-message {
+    background-color: #e2cdf7;
+    color: #1e1e1e;
+    padding: 10px;
+    border-radius: 15px;
+    text-align: left;
+    font-family:cursive;
+    display: block;
+    max-width: 60%; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    word-wrap: break-word;
+}  
+
+/* Dark Theme Adjustments */
+body.dark-theme .user-message {
+    background-color: #444;
+    color: #f5f5f5;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-theme .bot-message {
+    background-color: white;
+    color: #333;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+
+/* Input Area */
+.input-area {
+    display: flex;
+    gap: 10px;
+    width: 900px;
+   
+    align-self: center;
+}
+
+.input-area input {
+    flex-grow: 1;
+    padding: 10px;
+    width: 80%;
+    border: none;
+    font-family: cursive;
+    align-self: center;
+    align-content: center;
+    border-radius: 5px;
+    background-color: #e0e0e0;
+    color: #333;
+    transition: background-color 0.3s, color 0.3s;
+} 
+
+.input-area button{
+    color: whitesmoke;
+    transition: background-color 0.3s;
+
+}
+
+body.dark-theme .input-area input {
+    background-color: #444;
+    color: #f5f5f5;
+    
+}
+
+.input-area button {
+    background-color: rgb(130, 13, 226);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+body.dark-theme .input-area button {
+    background-color: #555;
+    color: #f5f5f5;
+}

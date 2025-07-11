@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional global customizations */
+:root {
+  font-family: system-ui, sans-serif;
+}
+body {
+  @apply bg-white text-black dark:bg-gptdark dark:text-white;
+  font-family: system-ui, sans-serif;
+  margin: 0;
+}

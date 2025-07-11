@@ -84,6 +84,7 @@ const startListening = () => {
   recognition.start();
 };
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 // text to speech
 const speakText = (text, index = null) => {
@@ -130,7 +131,7 @@ const stopListening = () => {
     const newTitle = prompt("Rename chat:", chat.title);
     if (!newTitle) return;
 
-    fetch(`http://localhost:5000/rename-chat/${chat._id}`, {
+    fetch(`${BASE_URL}/rename-chat/${chat._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newTitle }),
@@ -144,7 +145,7 @@ const stopListening = () => {
   const handleDelete = (id) => {
     if (!window.confirm("Are you sure you want to delete this chat?")) return;
 
-    fetch(`http://localhost:5000/delete-chat/${id}`, {
+    fetch(`${BASE_URL}/delete-chat/${id}`, {
       method: "DELETE",
     })
       .then(() => refreshSidebar())
@@ -154,22 +155,11 @@ const stopListening = () => {
     // ⬛ REFRESH SIDEBAR DATA ⬛
 
   const refreshSidebar = () => {
-    fetch(`http://localhost:5000/get-chat-summaries/${user.uid}`)
+    fetch(`${BASE_URL}/get-chat-summaries/${user.uid}`)
       .then((res) => res.json())
       .then((data) => setChatTitles(data));
   };
 
-  // const loadChat = (chatId) => {
-  //   setActiveChatId(chatId);
-  //   fetch(`http://localhost:5000/get-chats/${user.uid}`)
-  //     .then((res) => res.json())
-  //     .then((allChats) => {
-  //       const selected = allChats.find((c) => c._id === chatId);
-  //       if (selected) setMessages(selected.messages);
-  //     });
-  // };
-
-    // ⬛ LOAD CHAT MESSAGES ⬛
 
   const loadChat = (chatId) => {
   console.log("Clicked Chat ID:", chatId);
@@ -182,7 +172,7 @@ const stopListening = () => {
 
   setActiveChatId(chatId);
 
-  fetch(`http://localhost:5000/get-chats/${user.uid}`)
+  fetch(`${BASE_URL}/get-chats/${user.uid}`)
     .then((res) => res.json())
     .then((allChats) => {
       const selected = allChats.find((c) => c._id === chatId);
@@ -229,7 +219,7 @@ const stopListening = () => {
     const handleMoveToFolder = (chat, newFolder) => {
     if (!newFolder) return;
 
-    fetch(`http://localhost:5000/update-folder/${chat._id}`, {
+    fetch(`${BASE_URL}/update-folder/${chat._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folder: newFolder }),
@@ -274,7 +264,7 @@ const sendMessage = async () => {
   const safeFolder = selectedFolder || "Default";
 
   try {
-    const res = await fetch("http://localhost:5000/chat", {
+    const res = await fetch(`${BASE_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -295,7 +285,7 @@ const sendMessage = async () => {
     }
 
     if (user && finalMessages.length > 1) {
-      await fetch("http://localhost:5000/save-chat", {
+      await fetch(`${BASE_URL}/save-chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

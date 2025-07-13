@@ -14,27 +14,36 @@ export default function App() {
   const [loadingIntro, setLoadingIntro] = useState(true); // NEW: Startup loading state
 
 
-    useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
+// useEffect(() => {
+//   const unsubscribe = onAuthStateChanged(auth, setUser);
+//   return () => unsubscribe();
+// }, []);
 
 
-  useEffect(() => {
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme === "dark") {
-      document.body.classList.add("dark");
-      document.getElementById("theme-toggle").checked = true;
-    } 
-    
-    // Auto-hide startup screen
-    const timer = setTimeout(() => {
-      setLoadingIntro(false);
-    }, 2500); // 2.5 seconds
+const [loading, setLoading] = useState(true); // <-- Add this
 
-    return () => clearTimeout(timer);
-  }, []);
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    setUser(currentUser || null);
+    setLoading(false);  // ✅ Stop loading after Firebase resolves
+  });
 
+  return () => unsubscribe();
+}, []);
+
+
+useEffect(() => {
+  const storedTheme = localStorage.getItem("theme");
+  if (storedTheme === "dark") {
+    document.body.classList.add("dark");
+    document.getElementById("theme-toggle").checked = true;
+  }
+}, []);
+
+useEffect(() => {
+  const timer = setTimeout(() => setLoadingIntro(false), 10000);
+  return () => clearTimeout(timer);
+}, []);
 
 
   const toggleTheme = (e) => {
@@ -56,18 +65,32 @@ export default function App() {
 
 
     // ⭐ STEP 1: Show Intro Screen First
-  if (loadingIntro) {
-    return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-400 to-blue-400 text-white z-50">
-        <h1 className="text-5xl font-bold mb-4 animate-pulse">✨ Starting GenieX...</h1>
-        <p className="text-lg">Your smart assistant is getting ready</p>
+// if (loadingIntro) {
+//   return (
+//     <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-400 to-blue-400 text-white z-50">
+//       <h1 className="text-5xl font-bold mb-4 animate-pulse">✨ Starting GenieX...</h1>
+//       <p className="text-lg">Our smart assistant is getting ready</p>
+//     </div>
+//   );
+// }
+if (loadingIntro) {
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-600 via-indigo-500 to-blue-500 text-white z-[9999] transition-opacity duration-1000">
+      <h1 className="text-5xl font-bold mb-4 animate-bounce">✨ Starting GenieX...</h1>
+      <div className="flex gap-1 text-2xl animate-pulse">
+        <span>.</span>
+        <span>.</span>
+        <span>.</span>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
 
   
   return (
+
+    
     <div className="bg-white text-black dark:bg-gptdark dark:text-white min-h-screen">
       {/* Header */}
       <header className="relative flex justify-between items-center px-6 py-3 shadow bg-white text-black dark:bg-navdark dark:text-white">
@@ -104,12 +127,16 @@ export default function App() {
         </div>
       </header>
 
+      
       {/* Chat Area */}
       {user ? (
         <ChatBox />
       ) : (
-        <div className="flex justify-center items-center h-[80vh] text-lg">Please sign in to continue.</div>
+        <div className="flex justify-center items-center h-[80vh] text-lg animate-bounce">
+          Please sign in to continue.
+        </div>
       )}
+
     </div>
   );
 

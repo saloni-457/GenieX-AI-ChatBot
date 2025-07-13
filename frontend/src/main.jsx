@@ -51,7 +51,7 @@ function timeAgo(timestamp) {
   const [isSpeaking, setIsSpeaking] = useState(false); // 🗣️ Track speaking
   const [speechSupported, setSpeechSupported] = useState(false);
 
-  const [selectedFolder, setSelectedFolder] = useState("Default");
+  const [selectedFolder, setSelectedFolder] = useState("All");
   const folders = ["All", "Default", "Work", "Personal", "Learning"];
 
 // speech to text 
@@ -188,8 +188,10 @@ const stopListening = () => {
     })
     .catch((err) => console.error("Error loading chat:", err));
 };
+
   // ⬛ ON MOUNT: THEME SETUP ⬛
   
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") {
@@ -197,12 +199,16 @@ const stopListening = () => {
     }
   }, []);
 
+
     // Speech to text 
+
+
     useEffect(() => {
   if ('speechSynthesis' in window && 'webkitSpeechRecognition' in window) {
     setSpeechSupported(true);
   }
 }, []);
+
 
     // ⬛ TOGGLE THEME HANDLER ⬛
 
@@ -230,6 +236,8 @@ const stopListening = () => {
       .then(() => refreshSidebar())
       .catch((err) => console.error("Move folder error:", err));
   };
+
+
 // ⬛ USER AUTH STATE LISTENER ⬛
 
   useEffect(() => {
@@ -316,12 +324,6 @@ const sendMessage = async () => {
   console.error("❌ Error during sendMessage:", err);
 }
 
-  // } catch (err) {
-  //   setIsTyping(false);
-  //   const finalMessages = [...newMessages, { sender: "bot", text: "Something went wrong. Please try again." }];
-  //   setMessages(finalMessages);
-  //   console.error("❌ Error during sendMessage:", err);
-  // }
 };
 
 
@@ -337,10 +339,10 @@ const handleNewChat = async () => {
         folder: selectedFolder || "Default",
       }),
     });
-    refreshSidebar(); // ✅ Update sidebar after saving
+    refreshSidebar(); // ✅ Updating sidebar after saving
   }
 
-  // 🧹 Clear chat window
+                      // 🧹 Clear chat window
   setMessages([]);
   setInput("");
 };
@@ -391,11 +393,12 @@ const folderIcons = {
 const folderIcon = folderIcons[selectedFolder] || "/icons/default.png";
 
 
+
 if (!user) {
   return (
     <div className="flex items-center justify-center h-screen bg-lightBg dark:bg-gptdark">
       <button
-        onClick={signInWithGoogle} // 🔑 Your Google login function
+        onClick={signInWithGoogle}            // 🔑 My Google login function
         className="bg-gradient-to-r from-[#9a7dff] to-[#4b5dff] text-white px-6 py-3 rounded-full shadow-lg hover:opacity-90 transition-all duration-300"
       >
         Sign In with Google
@@ -406,7 +409,7 @@ if (!user) {
   return (
     <div className="bg-lightBg text-lightText dark:bg-gptdark dark:text-white min-h-screen font-sans transition-colors duration-500">
       <div className="flex h-screen relative">
-        {/* Sidebar Toggle Button with Logo */}
+                                            {/* Sidebar Toggle Button with Logo */}
 <button
   onClick={() => setLeftNavOpen(!leftNavOpen)}
   
@@ -423,7 +426,7 @@ if (!user) {
   />
 </button>
 
-{/* Sidebar Toggle Image Button */}
+                                           {/* Sidebar Toggle Image Button */}
 <button
   onClick={() => setLeftNavOpen(!leftNavOpen)}
   className="absolute top-3 left-3 z-50 p-2 rounded-full bg-white dark:bg-gray-800 shadow-md hover:scale-105 transition-transform duration-200"
@@ -436,7 +439,7 @@ if (!user) {
   />
 </button>
 
-{/* Sidebar */}
+                                                      {/* Sidebar */}
 {leftNavOpen && (
   <aside className="w-64 pt-14 p-4 overflow-y-auto border-r border-gray-300 dark:border-gray-700 shadow-xl transition-all duration-500 ease-in-out bg-[#e1e7ff] dark:bg-[#1e1e2e]">
     
@@ -444,7 +447,7 @@ if (!user) {
   
 
 
-{/* 📁 Folder Label (selectedFolder) - Horizontal */}
+                                                                                      {/* 📁 Folder Label (selectedFolder) - Horizontal */}
 <div className="flex flex-row items-center gap-2 mb-4 mt-2 ">
   <img src={folderIcon} alt="Folder Icon" className="w-5 h-5 opacity-70" />
   <span className="text-sm font-semibold text-gray-700 dark:text-white tracking-wide">
@@ -453,20 +456,20 @@ if (!user) {
 </div>
 
 
-    {/* 🔍 Search Bar */}
+                                                                                                                 {/* 🔍 Search Bar */}
 <div className="mt-4 flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-sm mb-4">
       <img src="/magnifying-glass.png" alt="Search" className="w-4 h-4 opacity-60" />
       <input
         type="text"
         value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)} // <-- 🔁 This line
+        onChange={(e) => setSearchQuery(e.target.value)} 
         placeholder="Search chats."
         className="flex-1 text-sm bg-transparent outline-none text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
       />
 
     </div>
 
-    {/* Chats heading */}
+                                                                                                                  {/* Chats heading */}
 <h2 className="text-xl font-bold mb-3 flex items-center gap-2 text-gray-800 dark:text-white animate-slide-in-left">
   Chats
 
@@ -478,7 +481,7 @@ if (!user) {
 
 </h2>
 
-    {/* 💬 Chat List */}
+                                                                     {/* 💬 Chat List */}
     {user && (<ul className="space-y-2">
       {
 chatTitles
@@ -489,22 +492,14 @@ chatTitles
 
     .map((chat) => (
       <li
-      
-        key={chat._id} 
+           key={chat._id} 
         
         className={`flex justify-between items-center group px-3 py-2 rounded-lg transition-all duration-300
           ${activeChatId === chat._id
             ? 'bg-purple-600 text-white'
             : 'text-gray-800 dark:text-white hover:bg-purple-600 hover:text-white'}
             
-        `}
-        
-      >
-
-      {/* <div onClick={() => loadChat(chat._id)} className="cursor-pointer flex-1 truncate capitalize">
-        <div>{chat.title}</div>
-        <span className="text-xs text-gray-500">{timeAgo(chat.timestamp)}</span>
-      </div> */}
+        `}>
 
 
         <span
@@ -521,12 +516,8 @@ chatTitles
 
         </span>
 
-          {/* <span
-            onClick={() => loadChat(chat._id)}
-            className="cursor-pointer flex-1 truncate capitalize"
-          >
-            {chat.title}
-          </span> */}
+
+
           <div className="relative">
             <button
     className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-2 text-gray-500 dark:text-gray-300 hover:text-white"
@@ -575,7 +566,9 @@ chatTitles
           </div>
         </li>
       ))}
-        {/* ✅ Show when no chats in current folder */}
+
+
+                                 {/* ✅ Show when no chats in current folder */}
   {
     chatTitles.filter(chat =>
       chat.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -590,43 +583,11 @@ chatTitles
   </aside>
 )}
 
-{/* {speechSupported && (
-  <div className="flex items-center gap-3 mb-4 ml-4">
-     🎤 Mic Button (Animated if listening) 
-    <button
-      onClick={isListening ? stopListening : startListening}
-      className={`p-3 rounded-full text-white shadow transition-all duration-300
-        ${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500 hover:bg-blue-600'}`}
-      title={isListening ? "Stop Listening" : "Start Listening"}
-    >
-      🎤
-    </button>
-
-    🔇 Voice Toggle 
-    <button
-      onClick={() => setVoiceEnabled(!voiceEnabled)}
-      className="text-sm px-4 py-2 bg-gray-300 dark:bg-gray-800 rounded shadow hover:bg-gray-400 dark:hover:bg-gray-700 transition-all"
-    >
-      {voiceEnabled ? "🔊 Voice ON" : "🔇 Voice OFF"}
-    </button>
-
-    🔊 Test Voice 
-    <button
-      onClick={() => speakText("Hello! I'm GenieX. How can I help you today?")}
-      className="p-3 rounded-full bg-green-500 text-white hover:bg-green-600 transition-all"
-      title="Test GenieX Voice"
-    >
-      🔊
-    </button>
-  </div>
-)} */}
-
-
-        {/* Main Chat Area */}
+                                             {/* Main Chat Area */}
       <main className={`flex flex-col flex-1 p-6 justify-between transition-all duration-300 ease-in-out 
         ${rightNavOpen ? "mr-64" : ""}  // 👈 leaves space for right nav
       `}>
-          {/* Top Navbar */}
+                                                {/* Top Navbar */}
           <div className="text-center mb-4 bg-gradient-to-r from-[#a27bff] to-[#5b6eff] dark:bg-[#2d2b3a] py-3 rounded shadow-md animate-fade-in">
             <div className="inline-flex items-center gap-3">
               <img src="/generative.png" alt="GenieX" className="w-6 h-6" />
@@ -634,7 +595,7 @@ chatTitles
             </div>
           </div>
 
-          {/* Messages */}
+                                                  {/* Messages */}
           <div id="messages" className="flex flex-col gap-4 overflow-y-auto flex-1 px-4 transition-all duration-300">
             {isListening && (
               <div className="self-start px-4 py-2 rounded-2xl max-w-[70%] bg-yellow-100 text-yellow-900 shadow">
@@ -685,44 +646,45 @@ chatTitles
                   )}
                 </div>
               ))
-
-
-              // messages.map((msg, i) => (
-              //   <div
-              //     key={i}
-              //     className={`transition-opacity duration-300 animate-slide-up ${
-              //       msg.sender === "user"
-              //         ? "self-end px-4 py-2 rounded-2xl max-w-[70%] text-black bg-white border"
-              //         : "self-start px-4 py-2 rounded-2xl max-w-[70%] text-white bg-[#7b4eff]"
-              //     }`}
-              //   >
-              //     {msg.text}
-              //   </div>
-              // ))
             )}
-            {isTyping && (
+
+
+            {/* {isTyping && (
               <div className="self-start px-4 py-2 rounded-2xl max-w-[70%] text-white bg-[#7b4eff] animate-pulse">
                 GenieX is typing<span className="animate-bounce">...</span>
               </div>
-            )}
+            )} */}
+
+            {isTyping && (
+            <div className="self-start max-w-[70%] px-4 py-2 rounded-2xl bg-[#e0dfff] dark:bg-[#7b4eff] shadow-md">
+              <div className="flex gap-2 items-center">
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce delay-0"></div>
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce delay-100"></div>
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce delay-200"></div>
+                <span className="ml-2 text-sm text-white">GenieX is typing...</span>
+              </div>
+            </div>
+          )}
+
 
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
+                                              {/* Input */}
 
-<div className="flex gap-2 mt-4 transition-all duration-200 items-center">
-  {/* 🎤 Mic Button */}
-  <button
-    onClick={isListening ? stopListening : startListening}
-    className={`p-2 rounded-full text-white shadow transition-all duration-300
-      ${isListening ? "bg-red-500 animate-pulse" : "bg-blue-500 hover:bg-blue-600"}`}
-    title={isListening ? "Stop Listening" : "Start Listening"}
-  >
-    🎤
-  </button>
+        <div className="flex gap-2 mt-4 transition-all duration-200 items-center">
+          
+                                          {/* 🎤 Mic Button */}
+          <button
+            onClick={isListening ? stopListening : startListening}
+            className={`p-2 rounded-full text-white shadow transition-all duration-300
+              ${isListening ? "bg-red-500 animate-pulse" : "bg-blue-500 hover:bg-blue-600"}`}
+            title={isListening ? "Stop Listening" : "Start Listening"}
+          >
+            🎤
+          </button>
 
-  {/* 🔊 or 🔇 Button (TTS Toggle) */}
+                                 {/* 🔊 or 🔇 Button (TTS Toggle) */}
   {isSpeaking ? (
     <button
       onClick={() => {
@@ -751,7 +713,7 @@ chatTitles
     </button>
   )}
 
-  {/* Input with optional listening animation */}
+                               {/* Input with optional listening animation */}
   <div className="relative flex-1">
     <input
       type="text"
@@ -766,7 +728,7 @@ chatTitles
       }`}
     />
 
-    {/* 🎙️ Animated dots if listening */}
+                                    {/* 🎙️ Animated dots if listening */}
     {isListening && (
       <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 animate-pulse">
         <div className="w-1 h-3 bg-purple-500 rounded-full animate-bounce"></div>
@@ -776,7 +738,7 @@ chatTitles
     )}
   </div>
 
-  {/* Send ➤ Button */}
+                                            {/* Send ➤ Button */}
   <button
     onClick={sendMessage}
     className="bg-[#7b4eff] text-white px-4 py-2 rounded-2xl hover:bg-[#673de6] transition-all duration-300"
@@ -910,9 +872,11 @@ chatTitles
         </div>
 
               <label className="inline-flex items-center cursor-pointer w-full mb-6">
-                   {/* ----------------------------------------------------------------------
+
+             {/* ----------------------------------------------------------------------------
                                  Selecting Language
               ------------------------------------------------------------------------------ */}
+
                 <input type="checkbox" id="theme-toggle" className="sr-only peer" onChange={toggleTheme} />
                               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1 text-gray-800 dark:text-white">Language</label>
@@ -935,7 +899,10 @@ chatTitles
                 <span className="ml-3 text-sm">Dark Mode</span>
               </label>
             </div>
+                       
                        {/* ✅ Logged in Info */}
+
+
           {user ? (
   <>
     {/* ✅ Logged in Info */}
@@ -981,7 +948,7 @@ chatTitles
           title="Close Menu"
         >
           <img
-            src="/closed_sl.png"  //  your ❌ icon here
+            src="/closed_sl.png"  //  ❌ icon 
             alt="Close Menu"
             className="w-5 h-5"
           />
@@ -993,7 +960,7 @@ chatTitles
           title="Open Menu"
         >
           <img
-            src="/opened_sl.png"  //  your ☰ icon here
+            src="/opened_sl.png"  //  ☰ icon
             alt="Open Menu"
             className="w-5 h-5"
           />
@@ -1007,12 +974,6 @@ chatTitles
   );
 };
 
-// const root = ReactDOM.createRoot(document.getElementById("root"));
-// root.render(
-//   <React.StrictMode>
-//     <App />
-//   </React.StrictMode>
-// );
 
 
 const container = document.getElementById("root");
@@ -1025,3 +986,4 @@ if (!container._reactRootContainer) {
     </React.StrictMode>
   );
 }
+

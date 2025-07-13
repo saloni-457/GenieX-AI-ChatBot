@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { auth } from "../firebase/config";
+import ListeningOverlay from "./ListeningOverlay"; // ✅ Correct path if `ListeningOverlay.jsx` is inside `components/`
 
 export default function ChatBox({ setChatTitles }) {
   const [input, setInput] = useState("");
@@ -154,6 +155,19 @@ export default function ChatBox({ setChatTitles }) {
           ➤
         </button>
       </div>
+
+
+      {isListening && (
+          <ListeningOverlay
+            transcript={input}
+            onCancel={stopListening}
+            onPause={() => {
+              window.speechSynthesis.cancel();
+              stopListening();
+            }}
+          />
+        )}
+
     </div>
   );
 }

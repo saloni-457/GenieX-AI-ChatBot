@@ -9,6 +9,7 @@ import html2pdf from 'html2pdf.js';
 
 
 import { auth, signInWithGoogle } from "./firebase/config";
+import ListeningOverlay from "./components/ListeningOverlay";
 
 
 // ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛ UTILITY: TIME AGO FUNCTION ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
@@ -32,6 +33,7 @@ function timeAgo(timestamp) {
 
   const App = () => {
   const [input, setInput] = useState("");
+  const recognitionRef = useRef(null); 
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [chatTitles, setChatTitles] = useState([]);
@@ -57,7 +59,7 @@ function timeAgo(timestamp) {
 // speech to text 
 const startListening = () => {
   if (!('webkitSpeechRecognition' in window)) {
-    alert("Speech recognition not supported in this browser.");
+    alert("Speech recognition is not supported in this browser.");
     return;
   }
 
@@ -66,7 +68,8 @@ const startListening = () => {
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
-  setIsListening(true); // ✅ show "Listening..." when starts
+  recognitionRef.current = recognition;
+  setIsListening(true);
 
   recognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
@@ -75,21 +78,52 @@ const startListening = () => {
 
   recognition.onerror = (event) => {
     console.error('Speech recognition error:', event.error);
-    setIsListening(false); // ✅ stop listening on error
+    setIsListening(false);
   };
 
   recognition.onend = () => {
-    setIsListening(false); // ✅ hide "Listening..." when done
+    setIsListening(false);
   };
 
   recognition.start();
 };
+
+// const startListening = () => {
+//   if (!('webkitSpeechRecognition' in window)) {
+//     alert("Speech recognition not supported in this browser.");
+//     return;
+//   }
+
+//   const recognition = new window.webkitSpeechRecognition();
+//   recognition.lang = selectedLanguage === 'hi' ? 'hi-IN' : selectedLanguage === 'es' ? 'es-ES' : 'en-US';
+//   recognition.interimResults = false;
+//   recognition.maxAlternatives = 1;
+
+//   setIsListening(true); // ✅ show "Listening..." when starts
+
+//   recognition.onresult = (event) => {
+//     const transcript = event.results[0][0].transcript;
+//     setInput(transcript);
+//   };
+
+//   recognition.onerror = (event) => {
+//     console.error('Speech recognition error:', event.error);
+//     setIsListening(false); // ✅ stop listening on error
+//   };
+
+//   recognition.onend = () => {
+//     setIsListening(false); // ✅ hide "Listening..." when done
+//   };
+
+//   recognition.start();
+// };
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 
 
 // text to speech
+
 const speakText = (text, index = null) => {
   window.speechSynthesis.cancel();
 
@@ -116,10 +150,43 @@ const speakText = (text, index = null) => {
 
 
 
+// const speakText = (text, index = null) => {
+//   window.speechSynthesis.cancel();
+
+//   const utterance = new SpeechSynthesisUtterance(text);
+//   utterance.lang = selectedLanguage === 'hi' ? 'hi-IN' : selectedLanguage === 'es' ? 'es-ES' : 'en-US';
+//   utterance.rate = 1;
+//   utterance.pitch = 1;
+
+//   utterance.onstart = () => {
+//     setIsSpeaking(true);
+//     setSpeakingMessageIndex(index);
+//   };
+//   utterance.onend = () => {
+//     setIsSpeaking(false);
+//     setSpeakingMessageIndex(null);
+//   };
+//   utterance.onerror = () => {
+//     setIsSpeaking(false);
+//     setSpeakingMessageIndex(null);
+//   };
+
+//   window.speechSynthesis.speak(utterance);
+// };
+
+
 const stopListening = () => {
-  window.webkitSpeechRecognition && window.webkitSpeechRecognition.abort?.();
+  if (recognitionRef.current) {
+    recognitionRef.current.abort(); // or stop()
+    recognitionRef.current = null;
+  }
   setIsListening(false);
 };
+
+// const stopListening = () => {
+//   window.webkitSpeechRecognition && window.webkitSpeechRecognition.abort?.();
+//   setIsListening(false);
+// };
 
  // ⬛ MENU TOGGLE HANDLER ⬛
 
@@ -970,6 +1037,17 @@ chatTitles
 
 
       </div>
+      {isListening && (
+        <ListeningOverlay
+          transcript={input}
+          onCancel={stopListening}
+          onPause={() => {
+            window.speechSynthesis.cancel();
+            stopListening();
+          }}
+        />
+      )}
+
     </div>
   );
 };

@@ -73,15 +73,35 @@ useEffect(() => {
 //     </div>
 //   );
 // }
+// if (loadingIntro) {
+//   return (
+//     <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-600 via-indigo-500 to-blue-500 text-white z-[9999] transition-opacity duration-1000">
+//       <h1 className="text-5xl font-bold mb-4 animate-bounce">✨ Starting GenieX...</h1>
+//       <div className="flex gap-1 text-2xl animate-pulse">
+//         <span>.</span>
+//         <span>.</span>
+//         <span>.</span>
+//       </div>
+//     </div>
+//   );
+// }
+
+
 if (loadingIntro) {
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-600 via-indigo-500 to-blue-500 text-white z-[9999] transition-opacity duration-1000">
-      <h1 className="text-5xl font-bold mb-4 animate-bounce">✨ Starting GenieX...</h1>
-      <div className="flex gap-1 text-2xl animate-pulse">
-        <span>.</span>
-        <span>.</span>
-        <span>.</span>
-      </div>
+    <div
+      className="fixed inset-0 bg-gradient-to-br from-[#f0f0ff] via-white to-[#f4faff] flex flex-col items-center justify-center z-[9999]"
+      onClick={() => setLoadingIntro(false)} // Tap to dismiss
+    >
+      <img
+        src="/chat-box.png"
+        alt="GenieX Bot"
+        className="w-44 h-44 mb-4 animate-bounce"
+      />
+      <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-800">
+        Your ✨<span className="text-blue-500">AI Companion</span> for Everyday
+      </h1>
+      <div className="text-gray-500 mt-4 text-sm">(Tap anywhere to continue)</div>
     </div>
   );
 }

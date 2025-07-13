@@ -1,0 +1,9 @@
+/* styles.css */
+.animate-wave {
+  animation: wave 1.2s infinite ease-in-out;
+}
+.animate-wave.delay-0   { animation-delay: 0s; }
+.animate-wave.delay-100 { animation-delay: 0.1s; }
+.animate-wave.delay-200 { animation-delay: 0.2s; }
+.animate-wave.delay-300 { animation-delay: 0.3s; }
+.animate-wave.delay-400 { animation-delay: 0.4s; }

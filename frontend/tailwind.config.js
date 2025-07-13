@@ -16,6 +16,7 @@ module.exports = {
         lightBorder: '#e3e8f0',
         lightPurple: '#8C6EFF',
 
+
         // Dark Theme (Enhanced modern)
         gptdark: '#1f1f2e',
         navdark: '#2a2a3c',
@@ -23,6 +24,7 @@ module.exports = {
         botdark: '#333348',
         userdarkhover: '#44445c',
 
+        
         // Message Bubble Colors
         botPurple: '#8C6EFF',
         userWhite: '#ffffff',
@@ -41,8 +43,10 @@ module.exports = {
           bounce: 'bounce 1s infinite',
           pulse: 'pulse 2s infinite',
           shimmer: 'shimmer 1.5s infinite linear',
-        'fade-in': 'fadeIn 0.8s ease-in-out',
-        'slide-in-left': 'slideInLeft 0.4s ease-out',
+          'fade-in': 'fadeIn 0.8s ease-in-out',
+          'slide-in-left': 'slideInLeft 0.4s ease-out',
+          wave: 'wave 1.2s infinite ease-in-out',
+
       },
       backgroundSize: {
         shimmer: '200% 100%',
@@ -64,7 +68,13 @@ module.exports = {
           '0%': { transform: 'translateX(-100%)', opacity: 0 },
           '100%': { transform: 'translateX(0)', opacity: 1 },
         },
+        wave: {
+          '0%, 100%': { transform: 'scaleY(0.4)' },
+          '50%': { transform: 'scaleY(1)' },
+        },
+
       },
+      
     },
   },
   plugins: [],

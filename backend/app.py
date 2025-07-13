@@ -29,7 +29,7 @@ mongo = PyMongo(app)
 
 CORS(app, origins=["http://localhost:5173", "https://genix-frontend.netlify.app"])
 
-# CORS(app)
+# CORSAn(app)
 
 # MongoDB connection
 # client = MongoClient("mongodb://localhost:27017/")
@@ -52,43 +52,96 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ----------------------------------------
 # ✅ 1. POST /chat - Generate AI reply
+# @app.route("/chat", methods=["POST"])
+# def chatbot_response():
+#     data = request.get_json()
+#     print("Incoming data:", data)
+
+#     if not data:
+#         print("🔴 No data received!")
+#         return jsonify({"error": "No data received"}), 400
+
+#     user_message = data.get("message")
+#     language = data.get("language", "en")
+
+#     if not user_message:
+#         return jsonify({"error": "Missing message"}), 400
+
+#     # Optional: Normalize language codes
+#     lang_map = {
+#         "en": "english",
+#         "hi": "hindi",
+#         "es": "spanish",
+#         "fr": "french",   # ✅ Add French
+#         "de": "german"    # ✅ Add German
+#     }
+
+#     try:
+#         src_lang = lang_map.get(language, "english")  # source user input language
+#         dest_lang = "english"
+#         translator = Translator(source=src_lang, target=dest_lang)
+
+#         if language != "en":
+#             user_message = translator.translate(user_message)
+
+#         # Generate AI reply (English)
+#         response = model.generate_content(user_message)
+#         bot_reply = response.text
+
+#         # Translate back if needed
+#         if language != "en":
+#             translator = Translator(source=dest_lang, target=src_lang)
+#             bot_reply = translator.translate(bot_reply)
+
+#         return jsonify({"response": bot_reply})
+
+#     except Exception as e:
+#         print("❌ Translation or response error:", str(e))
+#         return jsonify({"error": "Translation or AI error occurred"}), 500# ----------------------------------------
+
+
 @app.route("/chat", methods=["POST"])
 def chatbot_response():
-    data = request.get_json()
-    print("Incoming data:", data)
-
-    if not data:
-        print("🔴 No data received!")
-        return jsonify({"error": "No data received"}), 400
-
-    user_message = data.get("message")
-    language = data.get("language", "en")
-
-    if not user_message:
-        return jsonify({"error": "Missing message"}), 400
-
-    # Optional: Normalize language codes
-    lang_map = {
-        "en": "english",
-        "hi": "hindi",
-        "es": "spanish",
-        "fr": "french",   # ✅ Add French
-        "de": "german"    # ✅ Add German
-    }
-
     try:
-        src_lang = lang_map.get(language, "english")  # source user input language
-        dest_lang = "english"
-        translator = Translator(source=src_lang, target=dest_lang)
+        data = request.get_json()
+        print("Incoming data:", data)
 
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+
+        user_message = data.get("message")
+        language = data.get("language", "en")
+
+        if not user_message:
+            return jsonify({"error": "Missing message"}), 400
+
+        lang_map = {
+            "en": "english",
+            "hi": "hindi",
+            "es": "spanish",
+            "fr": "french",
+            "de": "german"
+        }
+
+        src_lang = lang_map.get(language, "english")
+        dest_lang = "english"
+
+        # 🔁 Translate user message to English
+        translator = Translator(source=src_lang, target=dest_lang)
         if language != "en":
             user_message = translator.translate(user_message)
 
-        # Generate AI reply (English)
+        # 🔮 Generate Gemini response
         response = model.generate_content(user_message)
+        print("Gemini raw response:", response)
+        if not hasattr(response, "text") or not response.text:
+            print("⚠️ Gemini did not return text")
+            return jsonify({"error": "Gemini did not return any response"}), 500
+
+      
         bot_reply = response.text
 
-        # Translate back if needed
+        # 🔁 Translate back if needed
         if language != "en":
             translator = Translator(source=dest_lang, target=src_lang)
             bot_reply = translator.translate(bot_reply)
@@ -96,10 +149,8 @@ def chatbot_response():
         return jsonify({"response": bot_reply})
 
     except Exception as e:
-        print("❌ Translation or response error:", str(e))
-        return jsonify({"error": "Translation or AI error occurred"}), 500# ----------------------------------------
-
-
+        print("❌ Error in /chat route:", str(e))  # ✅ Print exact issue
+        return jsonify({"error": "Translation or AI error occurred", "details": str(e)}), 500
 
 
 # @app.route("/chat", methods=["POST"])

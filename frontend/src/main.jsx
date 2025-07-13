@@ -46,6 +46,7 @@ function timeAgo(timestamp) {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [speakingMessageIndex, setSpeakingMessageIndex] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   const [isSpeaking, setIsSpeaking] = useState(false); // 🗣️ Track speaking
   const [speechSupported, setSpeechSupported] = useState(false);
@@ -85,6 +86,8 @@ const startListening = () => {
 };
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
+
 
 // text to speech
 const speakText = (text, index = null) => {
@@ -284,26 +287,62 @@ const sendMessage = async () => {
       speakText(data.response);
     }
 
-    if (user && finalMessages.length > 1) {
-      await fetch(`${BASE_URL}/save-chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.uid,
-          messages: finalMessages,
-          timestamp: Date.now(),
-          folder: safeFolder
-        }),
-      });
-      refreshSidebar();
-    }
+    // if (user && finalMessages.length > 1) {
+    //   await fetch(`${BASE_URL}/save-chat`, {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({
+    //       userId: user.uid,
+    //       messages: finalMessages,
+    //       timestamp: Date.now(),
+    //       folder: safeFolder
+    //     }),
+    //   });
+    //   setIsSaved(false); 
+    //   refreshSidebar();
+    // }
 
-  } catch (err) {
-    setIsTyping(false);
-    const finalMessages = [...newMessages, { sender: "bot", text: "Something went wrong. Please try again." }];
-    setMessages(finalMessages);
-    console.error("❌ Error during sendMessage:", err);
+
+
+    } catch (err) {
+  setIsTyping(false);
+
+  const errorText = err?.message || "Something went wrong. Please try again.";
+  const finalMessages = [
+    ...newMessages,
+    { sender: "bot", text: `⚠️ GenieX Error: ${errorText}` }
+  ];
+  setMessages(finalMessages);
+  console.error("❌ Error during sendMessage:", err);
+}
+
+  // } catch (err) {
+  //   setIsTyping(false);
+  //   const finalMessages = [...newMessages, { sender: "bot", text: "Something went wrong. Please try again." }];
+  //   setMessages(finalMessages);
+  //   console.error("❌ Error during sendMessage:", err);
+  // }
+};
+
+
+const handleNewChat = async () => {
+  if (user && messages.length > 1) {
+    await fetch(`${BASE_URL}/save-chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: user.uid,
+        messages,
+        timestamp: Date.now(),
+        folder: selectedFolder || "Default",
+      }),
+    });
+    refreshSidebar(); // ✅ Update sidebar after saving
   }
+
+  // 🧹 Clear chat window
+  setMessages([]);
+  setInput("");
 };
 
 
@@ -833,11 +872,7 @@ chatTitles
   <div className="flex-grow">
     
               <button
-                onClick={() => {
-                  setMessages([]);
-                   setActiveChatId(null); 
-                  refreshSidebar();
-                }}
+                onClick={handleNewChat}
                 className="bg-gradient-to-r from-[#9a7dff] to-[#4b5dff] text-white px-4 py-2 mb-4 rounded hover:opacity-90 w-full transition-all duration-300"
               >
                 + New Chat

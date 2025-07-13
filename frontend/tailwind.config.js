@@ -44,6 +44,19 @@ module.exports = {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
+
+
+        // **************************************
+        //   @keyframes fadeIn {
+        //     from { opacity: 0; transform: scale(0.95); }
+        //     to { opacity: 1; transform: scale(1); }
+        //   }
+
+        //   .animate-fadeIn {
+        //     animation: fadeIn 0.8s ease-out;
+        //   }
+
+        // **************************************
         slideInLeft: {
           '0%': { opacity: '0', transform: 'translateX(-10%)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },

@@ -11,6 +11,7 @@ import "./index.css";
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [loadingIntro, setLoadingIntro] = useState(true); // NEW: Startup loading state
 
 
     useEffect(() => {
@@ -24,8 +25,16 @@ export default function App() {
     if (storedTheme === "dark") {
       document.body.classList.add("dark");
       document.getElementById("theme-toggle").checked = true;
-    }
+    } 
+    
+    // Auto-hide startup screen
+    const timer = setTimeout(() => {
+      setLoadingIntro(false);
+    }, 2500); // 2.5 seconds
+
+    return () => clearTimeout(timer);
   }, []);
+
 
 
   const toggleTheme = (e) => {
@@ -45,6 +54,19 @@ export default function App() {
     setUser(null);
   };
 
+
+    // ⭐ STEP 1: Show Intro Screen First
+  if (loadingIntro) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-400 to-blue-400 text-white z-50">
+        <h1 className="text-5xl font-bold mb-4 animate-pulse">✨ Starting GenieX...</h1>
+        <p className="text-lg">Your smart assistant is getting ready</p>
+      </div>
+    );
+  }
+
+
+  
   return (
     <div className="bg-white text-black dark:bg-gptdark dark:text-white min-h-screen">
       {/* Header */}

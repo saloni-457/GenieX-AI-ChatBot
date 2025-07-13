@@ -52,6 +52,7 @@ function timeAgo(timestamp) {
 
   const [isSpeaking, setIsSpeaking] = useState(false); // 🗣️ Track speaking
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [showSplash, setShowSplash] = useState(true); // 🔄 splash on first load
 
   const [selectedFolder, setSelectedFolder] = useState("All");
   const folders = ["All", "Default", "Work", "Personal", "Learning"];
@@ -458,6 +459,46 @@ const folderIcons = {
 };
 
 const folderIcon = folderIcons[selectedFolder] || "/icons/default.png";
+
+if (showSplash) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center h-screen w-screen text-center text-gray-800 dark:text-white transition-all duration-500 bg-gradient-to-br from-[#fefefe] via-[#eef3ff] to-[#ddefff] dark:from-[#1a1a2e] dark:to-[#1a1a2e] relative overflow-hidden"
+      onClick={() => setShowSplash(false)}    // Tap to continue
+    >
+      {/*  Bot Image */}
+      <div className="relative mb-8 animate-fade-in">
+        <img
+          src="/bot_img.png"
+          alt="GenieX Bot"
+          className="w-48 sm:w-52 md:w-56 lg:w-64 h-auto mx-auto"
+        />
+
+        {/* 💬 Speech Bubble */}
+        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white text-gray-800 px-4 py-2 rounded-xl shadow-lg text-sm font-medium animate-bounce">
+          Hey there! 👋 Need a boost?
+        </div>
+      </div>
+
+      {/* ✨ Main Title */}
+      <h1 className="text-3xl sm:text-5xl font-bold mb-4 leading-snug animate-slide-up">
+        Your <span className="text-blue-500">✨ AI</span> Companion<br />
+        for <span className="text-slate-700">Everyday</span>
+      </h1>
+
+      {/* 🔹 Subtitle */}
+      <p className="text-base sm:text-lg text-gray-600 italic animate-pulse">
+        Tap anywhere to begin your AI chat journey
+      </p>
+
+      {/* ⬇️ Bottom Icons */}
+      <div className="absolute bottom-6 w-full flex justify-between px-6">
+        <img src="/calendar.png" alt="Calendar" className="w-6 h-6 opacity-60" />
+        <img src="/pulse.png" alt="Pulse" className="w-6 h-6 opacity-60" />
+      </div>
+    </div>
+  );
+}
 
 
 
@@ -1056,12 +1097,11 @@ chatTitles
 
 const container = document.getElementById("root");
 
-if (!container._reactRootContainer) {
   const root = ReactDOM.createRoot(container);
   root.render(
     <React.StrictMode>
       <App />
     </React.StrictMode>
   );
-}
+
 

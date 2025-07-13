@@ -24,7 +24,7 @@ module.exports = {
         botdark: '#333348',
         userdarkhover: '#44445c',
 
-        
+
         // Message Bubble Colors
         botPurple: '#8C6EFF',
         userWhite: '#ffffff',
@@ -40,10 +40,12 @@ module.exports = {
 
 
       animation: {
-          bounce: 'bounce 1s infinite',
+          bounce: 'bounce 1.5s infinite',
           pulse: 'pulse 2s infinite',
           shimmer: 'shimmer 1.5s infinite linear',
-          'fade-in': 'fadeIn 0.8s ease-in-out',
+          'fade-in': 'fadeIn 1s ease-in-out',
+          'fade-in-up': 'fadeInUp 1s ease-out',
+
           'slide-in-left': 'slideInLeft 0.4s ease-out',
           wave: 'wave 1.2s infinite ease-in-out',
 
@@ -59,6 +61,10 @@ module.exports = {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
+        },
+        fadeInUp: {
+          '0%': { opacity: 0, transform: 'translateY(20px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)' },
         },
         slideUp: {
           '0%': { transform: 'translateY(20px)', opacity: 0 },

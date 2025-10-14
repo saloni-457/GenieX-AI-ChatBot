@@ -40,7 +40,7 @@ chats_collection.update_many(
 
 # Gemini API setup
 genai.configure(api_key= gem_api_key)
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
 
 

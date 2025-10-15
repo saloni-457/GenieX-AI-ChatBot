@@ -104,31 +104,95 @@ def chatbot_response():
 # ----------------------------------------
 
 
+
 @app.route("/save-chat", methods=["POST"])
 def save_chat():
-    data = request.get_json()
-    user_id = data.get("userId")
-    messages = data.get("messages")
-    timestamp = data.get("timestamp")
-    folder = data.get("folder", "Default")  # ✅ NEW: get folder from request
+    try:
+        data = request.get_json(force=True)
 
-    if not (user_id and messages):
-        return jsonify({"error": "Missing data"}), 400
+        user_id = data.get("userId")
+        messages = data.get("messages", [])
+        timestamp = data.get("timestamp") or int(time.time() * 1000)
+        folder = data.get("folder", "Default")
+        chat_id = data.get("chatId")
 
-    # Use first user message as title
-    title = messages[0]["text"][:30] if messages else "Untitled Chat"
+        print("📩 Incoming /save-chat data:", data)
 
-    folder = data.get("folder", "Default")  # default 
-    chat = {
-        "userId": user_id,
-        "title": title,
-        "messages": messages,
-        "timestamp": timestamp or int(time.time() * 1000),
-        "folder": folder  # ✅ ADDED HERE
-    }
+        if not user_id:
+            return jsonify({"error": "Missing userId"}), 400
 
-    result = chats_collection.insert_one(chat)
-    return jsonify({"message": "Chat saved", "chatId": str(result.inserted_id)})
+        if not messages:
+            messages = [{"role": "system", "content": "Empty Chat"}]
+
+        # Safe title
+        first_msg = messages[0] if len(messages) > 0 else {}
+        title = first_msg.get("content", "Untitled Chat")[:30]
+
+        if chat_id:
+            try:
+                result = chats_collection.update_one(
+                    {"_id": ObjectId(chat_id)},
+                    {"$set": {
+                        "messages": messages,
+                        "timestamp": timestamp,
+                        "folder": folder,
+                        "title": title
+                    }}
+                )
+                print("✅ Updated chat:", chat_id)
+                return jsonify({
+                    "message": "Chat updated successfully",
+                    "chatId": chat_id
+                }), 200
+            except Exception as e:
+                print("⚠️ Error updating chat:", e)
+                return jsonify({"error": str(e)}), 500
+
+        else:
+            new_chat = {
+                "userId": user_id,
+                "title": title,
+                "messages": messages,
+                "timestamp": timestamp,
+                "folder": folder
+            }
+            result = chats_collection.insert_one(new_chat)
+            print("✅ New chat inserted:", result.inserted_id)
+            return jsonify({
+                "message": "Chat saved successfully",
+                "chatId": str(result.inserted_id)
+            }), 201
+
+    except Exception as e:
+        print("❌ Error in /save-chat:", e)
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+# @app.route("/save-chat", methods=["POST"])
+# def save_chat():
+#     data = request.get_json()
+#     user_id = data.get("userId")
+#     messages = data.get("messages")
+#     timestamp = data.get("timestamp")
+#     folder = data.get("folder", "Default")  # ✅ NEW: get folder from request
+
+#     if not (user_id and messages):
+#         return jsonify({"error": "Missing data"}), 400
+
+#     # Use first user message as title
+#     title = messages[0]["text"][:30] if messages else "Untitled Chat"
+
+#     folder = data.get("folder", "Default")  # default 
+#     chat = {
+#         "userId": user_id,
+#         "title": title,
+#         "messages": messages,
+#         "timestamp": timestamp or int(time.time() * 1000),
+#         "folder": folder  # ✅ ADDED HERE
+#     }
+
+#     result = chats_collection.insert_one(chat)
+#     return jsonify({"message": "Chat saved", "chatId": str(result.inserted_id)})
 
 
 # ----------------------------------------

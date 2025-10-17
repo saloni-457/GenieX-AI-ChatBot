@@ -1,12 +1,12 @@
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from flask_pymongo import PyMongo
-from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from deep_translator import GoogleTranslator as Translator
 from dotenv import load_dotenv
+from bson.errors import InvalidId
+
 import re
 import os
 import time
@@ -559,7 +559,7 @@ def save_chat():
     user_id = data.get("userId")
     messages = data.get("messages")
     timestamp = data.get("timestamp")
-    folder = data.get("folder", "Default")  # ✅ NEW: get folder from request
+    folder = data.get("folder", "All")  # ✅ NEW: get folder from request
 
     if not (user_id and messages):
         return jsonify({"error": "Missing data"}), 400
@@ -594,11 +594,17 @@ def save_chat():
 
 @app.route("/get-chat/<chat_id>", methods=["GET"])
 def get_chat(chat_id):
-    chat = chats_collection.find_one({"_id": ObjectId(chat_id)})
-    if not chat:
-        return jsonify({"error": "Chat not found"}), 404
-    chat["_id"] = str(chat["_id"])
-    return jsonify(chat)
+    try:
+        chat = chats_collection.find_one({"_id": ObjectId(chat_id)})
+        if not chat:
+            return jsonify({"error": "Chat not found"}), 404
+        chat["_id"] = str(chat["_id"])
+        return jsonify(chat)
+    except InvalidId:
+        return jsonify({"error": "Invalid chat ID"}), 400
+    except Exception as e:
+        print("Error in /get-chat:", e)
+        return jsonify({"error": "Server error"}), 500
 
 
 # @app.route("/get-chat/<chat_id>", methods=["GET"])
@@ -724,6 +730,14 @@ def update_folder(chat_id):
     )
     return jsonify({"message": "Folder updated"})
 
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Route not found"}), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    return jsonify({"error": "Internal server error"}), 500
 
 # ✅ Run server
 if __name__ == "__main__":

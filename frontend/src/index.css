@@ -11,3 +11,19 @@ body {
   font-family: system-ui, sans-serif;
   margin: 0;
 }
+
+@keyframes bloom {
+  0% {
+    box-shadow: 0 0 0px rgba(168, 85, 247, 0.7), 0 0 0px rgba(236, 72, 153, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(168, 85, 247, 0.9), 0 0 50px rgba(236, 72, 153, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 0px rgba(168, 85, 247, 0.7), 0 0 0px rgba(236, 72, 153, 0.6);
+  }
+}
+
+.animate-bloom {
+  animation: bloom 0.7s ease-out forwards;
+}

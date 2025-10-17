@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom/client";
+
 import "./index.css";
 import jsPDF from "jspdf";
-
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import ChatInput from "./components/ChatInput";
 import html2pdf from 'html2pdf.js';
 
 
@@ -13,7 +16,6 @@ import ListeningOverlay from "./components/ListeningOverlay";
 
 
 // ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛ UTILITY: TIME AGO FUNCTION ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
-
 
 
 function timeAgo(timestamp) {
@@ -36,11 +38,16 @@ function timeAgo(timestamp) {
   const recognitionRef = useRef(null); 
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
+    const messagesEndRef = useRef(null);
+
   const [chatTitles, setChatTitles] = useState([]);
+  const [chatSummaries, setChatSummaries] = useState([]);
+
   const [openMenu, setOpenMenu] = useState(null);
+  
   const [rightNavOpen, setRightNavOpen] = useState(false);
   const [leftNavOpen, setLeftNavOpen] = useState(true);
-  const messagesEndRef = useRef(null);
+  // const messagesEndRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeChatId, setActiveChatId] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -55,6 +62,7 @@ function timeAgo(timestamp) {
   const [showSplash, setShowSplash] = useState(true); // 🔄 splash on first load
 
   const [selectedFolder, setSelectedFolder] = useState("All");
+  
   const folders = ["All", "Default", "Work", "Personal", "Learning"];
 
 // speech to text 
@@ -89,44 +97,18 @@ const startListening = () => {
   recognition.start();
 };
 
-// const startListening = () => {
-//   if (!('webkitSpeechRecognition' in window)) {
-//     alert("Speech recognition not supported in this browser.");
-//     return;
-//   }
-
-//   const recognition = new window.webkitSpeechRecognition();
-//   recognition.lang = selectedLanguage === 'hi' ? 'hi-IN' : selectedLanguage === 'es' ? 'es-ES' : 'en-US';
-//   recognition.interimResults = false;
-//   recognition.maxAlternatives = 1;
-
-//   setIsListening(true); // ✅ show "Listening..." when starts
-
-//   recognition.onresult = (event) => {
-//     const transcript = event.results[0][0].transcript;
-//     setInput(transcript);
-//   };
-
-//   recognition.onerror = (event) => {
-//     console.error('Speech recognition error:', event.error);
-//     setIsListening(false); // ✅ stop listening on error
-//   };
-
-//   recognition.onend = () => {
-//     setIsListening(false); // ✅ hide "Listening..." when done
-//   };
-
-//   recognition.start();
-// };
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
-
-
-
+// console.log(BASE_URL)
 // text to speech
+
 
 const speakText = (text, index = null) => {
   window.speechSynthesis.cancel();
+
+
+  // const cleanText = msg.text.replace(/[*_~`]/g, "");
+    const cleanText = text.replace(/[*_~`]/g, "");
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = selectedLanguage === 'hi' ? 'hi-IN' : selectedLanguage === 'es' ? 'es-ES' : 'en-US';
@@ -149,33 +131,6 @@ const speakText = (text, index = null) => {
   window.speechSynthesis.speak(utterance);
 };
 
-
-
-// const speakText = (text, index = null) => {
-//   window.speechSynthesis.cancel();
-
-//   const utterance = new SpeechSynthesisUtterance(text);
-//   utterance.lang = selectedLanguage === 'hi' ? 'hi-IN' : selectedLanguage === 'es' ? 'es-ES' : 'en-US';
-//   utterance.rate = 1;
-//   utterance.pitch = 1;
-
-//   utterance.onstart = () => {
-//     setIsSpeaking(true);
-//     setSpeakingMessageIndex(index);
-//   };
-//   utterance.onend = () => {
-//     setIsSpeaking(false);
-//     setSpeakingMessageIndex(null);
-//   };
-//   utterance.onerror = () => {
-//     setIsSpeaking(false);
-//     setSpeakingMessageIndex(null);
-//   };
-
-//   window.speechSynthesis.speak(utterance);
-// };
-
-
 const stopListening = () => {
   if (recognitionRef.current) {
     recognitionRef.current.abort(); // or stop()
@@ -183,11 +138,6 @@ const stopListening = () => {
   }
   setIsListening(false);
 };
-
-// const stopListening = () => {
-//   window.webkitSpeechRecognition && window.webkitSpeechRecognition.abort?.();
-//   setIsListening(false);
-// };
 
  // ⬛ MENU TOGGLE HANDLER ⬛
 
@@ -231,31 +181,82 @@ const stopListening = () => {
       .then((data) => setChatTitles(data));
   };
 
+// ✅ Helper to save the current active chat before switching
 
-  const loadChat = (chatId) => {
-  console.log("Clicked Chat ID:", chatId);
-  console.log("User:", user);
 
-  if (!user || !user.uid) {
-    alert("User not authenticated yet. Please wait...");
-    return;
+// const saveCurrentChat = async () => {
+//   if (!activeChatId || !user) return;
+
+//   try {
+//     console.log("💾 Updating existing chat:", activeChatId);
+//     const response = await fetch(`${BASE_URL}/update-chat/${activeChatId}`, {
+//       method: "PUT",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({
+//         userId: user.uid,
+//         messages,
+//         timestamp: Date.now(),
+//       }),
+//     });
+
+//     const data = await response.json();
+//     console.log("✅ Chat updated:", data);
+//   } catch (error) {
+//     console.error("❌ Error saving chat:", error);
+//   }
+// };
+
+// ✅ When user clicks on a chat in the sidebar
+const handleChatClick = async (chatId) => {
+  try {
+    console.log("Clicked Chat ID:", chatId);
+    console.log("User:", user);
+
+    // ✅ Save current chat before switching
+    if (activeChatId && messages.length > 0) {
+      console.log("💾 Saving previous chat before switching...");
+      await saveCurrentChat();
+    }
+
+    // ✅ Set the new active chat
+    setActiveChatId(chatId);
+
+    // ✅ Load that chat’s messages
+    const res = await fetch(`${BASE_URL}/get-chat/${chatId}`);
+    const data = await res.json();
+    console.log("Loaded Messages:", data.messages);
+    setMessages(data.messages || []);
+  } catch (error) {
+    console.error("Error loading chat:", error);
   }
-
-  setActiveChatId(chatId);
-
-  fetch(`${BASE_URL}/get-chats/${user.uid}`)
-    .then((res) => res.json())
-    .then((allChats) => {
-      const selected = allChats.find((c) => c._id === chatId);
-      if (selected) {
-        console.log("Loaded Messages:", selected.messages);
-        setMessages(selected.messages);
-      } else {
-        console.warn("No chat found with this ID.");
-      }
-    })
-    .catch((err) => console.error("Error loading chat:", err));
 };
+
+
+
+//   const loadChat = (chatId) => {
+//   console.log("Clicked Chat ID:", chatId);
+//   console.log("User:", user);
+
+//   if (!user || !user.uid) {
+//     alert("User not authenticated yet. Please wait...");
+//     return;
+//   }
+
+//   setActiveChatId(chatId);
+
+//   fetch(`${BASE_URL}/get-chats/${user.uid}`)
+//     .then((res) => res.json())
+//     .then((allChats) => {
+//       const selected = allChats.find((c) => c._id === chatId);
+//       if (selected) {
+//         console.log("Loaded Messages:", selected.messages);
+//         setMessages(selected.messages);
+//       } else {
+//         console.warn("No chat found with this ID.");
+//       }
+//     })
+//     .catch((err) => console.error("Error loading chat:", err));
+// };
 
   // ⬛ ON MOUNT: THEME SETUP ⬛
   
@@ -288,6 +289,14 @@ const stopListening = () => {
   };
 
             
+
+    useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages])
+
+  
   // ---------------------------------------------------
   //                 handler Function
   // ---------------------------------------------------
@@ -329,10 +338,17 @@ const stopListening = () => {
   }, [messages]);
 
     // ⬛ SEND MESSAGE HANDLER ⬛
-    folder: selectedFolder || "Default"
+    // folder: selectedFolder || "Default"
 
+    const cleanResponse = (text = "") => {
+      return text
+        .replace(/\*+/g, "")        // remove asterisks
+        .replace(/#+\s/g, "")       // remove markdown headings
+        .replace(/```[\s\S]*?```/g, "") // remove code fences
+        .trim();
+    };
 
-const sendMessage = async () => {
+  const sendMessage = async () => {
   if (!input.trim()) return;
 
   const newMessages = [...messages, { sender: "user", text: input }];
@@ -340,80 +356,157 @@ const sendMessage = async () => {
   setInput("");
   setIsTyping(true);
 
-  const safeFolder = selectedFolder || "Default";
-
   try {
     const res = await fetch(`${BASE_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: input,
-        language: selectedLanguage
+        language: selectedLanguage,
+        folder: selectedFolder || "Default",
       }),
     });
 
+
     const data = await res.json();
+    console.log("📩 Backend Response:", data);
+
     setIsTyping(false);
 
-    const finalMessages = [...newMessages, { sender: "bot", text: data.response }];
+    const botResponse = data?.response || "⚠️ No response from server";
+    const cleaned = cleanResponse(botResponse);
+
+    const finalMessages = [
+      ...newMessages,
+      { sender: "bot", text: cleaned }
+    ];
     setMessages(finalMessages);
 
-    // ✅ TTS: Speak bot reply if voice is enabled
-    if (voiceEnabled) {
-      speakText(data.response);
+    // 🔊 Auto-speak
+    if (voiceEnabled && typeof speakText === "function") {
+      speakText(cleaned);
     }
 
-    // if (user && finalMessages.length > 1) {
-    //   await fetch(`${BASE_URL}/save-chat`, {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({
-    //       userId: user.uid,
-    //       messages: finalMessages,
-    //       timestamp: Date.now(),
-    //       folder: safeFolder
-    //     }),
-    //   });
-    //   setIsSaved(false); 
-    //   refreshSidebar();
-    // }
+    // 🔄 Update sidebar
+    if (typeof refreshSidebar === "function") {
+      refreshSidebar();
+    }
 
+    // // 🔄 Update sidebar
+    // refreshSidebar();
 
-
-    } catch (err) {
-  setIsTyping(false);
-
-  const errorText = err?.message || "Something went wrong. Please try again.";
-  const finalMessages = [
-    ...newMessages,
-    { sender: "bot", text: `⚠️ GenieX Error: ${errorText}` }
-  ];
-  setMessages(finalMessages);
-  console.error("❌ Error during sendMessage:", err);
-}
-
+  } catch (err) {
+    setIsTyping(false);
+    const errorText = err?.message || "Something went wrong. Please try again.";
+    setMessages([
+      ...newMessages,
+      { sender: "bot", text: `⚠️ GenieX Error: ${errorText}` },
+    ]);
+    console.error("❌ Error during sendMessage:", err);
+  }
 };
 
-
 const handleNewChat = async () => {
-  if (user && messages.length > 1) {
-    await fetch(`${BASE_URL}/save-chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+  if (!user) return;
+
+  try {
+    // 1) If there's an open (old) chat with content, save/update it first.
+    if (messages && messages.length > 0 && activeChatId) {
+      const updatePayload = {
         userId: user.uid,
         messages,
         timestamp: Date.now(),
         folder: selectedFolder || "Default",
-      }),
-    });
-    refreshSidebar(); // ✅ Updating sidebar after saving
-  }
+        chatId: activeChatId, // signal backend to update existing chat
+      };
 
-                      // 🧹 Clear chat window
-  setMessages([]);
-  setInput("");
+      const updRes = await fetch(`${BASE_URL}/save-chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatePayload),
+      });
+
+      const updData = await updRes.json();
+      if (!updRes.ok) {
+        console.error("Failed to save old chat before creating new one:", updData);
+      } else {
+        console.log("Old chat saved before new chat:", updData);
+      }
+    }
+
+    // 2) Clear frontend state (start fresh)
+    setMessages([]);
+    setInput("");
+    setActiveChatId(null);
+
+    // 3) Create a fresh chat on the backend and set it as active
+    const createPayload = {
+      userId: user.uid,
+      messages: [
+        { role: "system", content: "New conversation started", timestamp: Date.now() }
+      ],
+      timestamp: Date.now(),
+      folder: selectedFolder || "Default",
+    };
+
+    const createRes = await fetch(`${BASE_URL}/save-chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(createPayload),
+    });
+
+    const createData = await createRes.json();
+    if (!createRes.ok) {
+      console.error("Failed to create new chat:", createData);
+      return;
+    }
+
+    if (createData.chatId) {
+      setActiveChatId(createData.chatId);
+      console.log("New chat created:", createData.chatId);
+    }
+
+    // 4) Refresh sidebar so user sees the new chat immediately
+    await refreshSidebar();
+  } catch (err) {
+    console.error("Error creating new chat:", err);
+  }
 };
+
+
+
+// const handleNewChat = async () => {
+//   if (user) {
+//     // ✅ Create an empty chat session immediately when clicking "New Chat"
+//     const response = await fetch(`${BASE_URL}/save-chat`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({
+//         userId: user.uid,
+//         messages,
+//         // [
+//         //   {
+//         //     role: "system",
+//         //     content: "New conversation started"
+//         //   }
+//         // ],
+//         timestamp: Date.now(),
+//         folder: selectedFolder || "Default",
+//       }),
+//     });
+
+//     const data = await response.json();
+//     console.log("New chat saved:", data);
+
+//     // ✅ Update sidebar immediately
+//     refreshSidebar();
+
+//     // 🧹 Clear old messages from chat window
+//     setMessages([]);
+//     setInput("");
+//   }
+// };
+
 
 
 const exportChatAsPDF = () => {
@@ -517,22 +610,6 @@ if (!user) {
   return (
     <div className="bg-lightBg text-lightText dark:bg-gptdark dark:text-white min-h-screen font-sans transition-colors duration-500">
       <div className="flex h-screen relative">
-                                            {/* Sidebar Toggle Button with Logo */}
-<button
-  onClick={() => setLeftNavOpen(!leftNavOpen)}
-  
-  className="absolute top-3 left-3 z-50 p-2 rounded-full bg-white dark:bg-gray-800 shadow-md hover:scale-105 transition-transform duration-200"
-  title="Toggle Sidebar"
->
-  
-  <img
-    src={leftNavOpen ? "/slidebar-left.png" : "/slidebar-left.png"}
-    alt="Toggle Sidebar"
-    className="w-6 h-6" 
-    // className="w-6 h-6 transform transition-transform duration-300 group-hover:rotate-180"
-
-  />
-</button>
 
                                            {/* Sidebar Toggle Image Button */}
 <button
@@ -550,12 +627,9 @@ if (!user) {
                                                       {/* Sidebar */}
 {leftNavOpen && (
   <aside className="w-64 pt-14 p-4 overflow-y-auto border-r border-gray-300 dark:border-gray-700 shadow-xl transition-all duration-500 ease-in-out bg-[#e1e7ff] dark:bg-[#1e1e2e]">
-    
-
-  
 
 
-                                                                                      {/* 📁 Folder Label (selectedFolder) - Horizontal */}
+                                   {/* 📁 Folder Label (selectedFolder) - Horizontal */}
 <div className="flex flex-row items-center gap-2 mb-4 mt-2 ">
   <img src={folderIcon} alt="Folder Icon" className="w-5 h-5 opacity-70" />
   <span className="text-sm font-semibold text-gray-700 dark:text-white tracking-wide">
@@ -563,8 +637,7 @@ if (!user) {
   </span>
 </div>
 
-
-                                                                                                                 {/* 🔍 Search Bar */}
+                                          {/* 🔍 Search Bar */}
 <div className="mt-4 flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-sm mb-4">
       <img src="/magnifying-glass.png" alt="Search" className="w-4 h-4 opacity-60" />
       <input
@@ -575,9 +648,10 @@ if (!user) {
         className="flex-1 text-sm bg-transparent outline-none text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
       />
 
+
     </div>
 
-                                                                                                                  {/* Chats heading */}
+                                                    {/* Chats heading */}
 <h2 className="text-xl font-bold mb-3 flex items-center gap-2 text-gray-800 dark:text-white animate-slide-in-left">
   Chats
 
@@ -589,10 +663,10 @@ if (!user) {
 
 </h2>
 
-                                                                     {/* 💬 Chat List */}
+                                                   {/* 💬 Chat List */}
     {user && (<ul className="space-y-2">
       {
-chatTitles
+  chatTitles
   .filter(chat =>
     chat.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
   (selectedFolder === "All" || (chat.folder || "Default") === selectedFolder)
@@ -611,7 +685,7 @@ chatTitles
 
 
         <span
-          onClick={() => loadChat(chat._id)}
+          onClick={() => handleChatClick(chat._id)}
           className="cursor-pointer flex-1 truncate capitalize group relative"
         >
           {chat.title}
@@ -712,64 +786,74 @@ chatTitles
             )}
 
             {messages.length === 0 ? (
-              <div className="text-center text-gray-400 dark:text-gray-500 animate-pulse">Start Conversation</div>
+              <div className="text-center text-gray-400 dark:text-gray-500 animate-pulse">
+                Start Conversation
+                </div>
             ) : (
 
-              messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`transition-opacity duration-300 animate-slide-up flex items-start gap-2 ${
-                    msg.sender === "user"
-                      ? "self-end px-4 py-2 rounded-2xl max-w-[70%] text-black bg-white border"
-                      : "self-start px-4 py-2 rounded-2xl max-w-[70%] text-white bg-[#7b4eff]"
-                  }`}
-                >
-                  <span className="flex-1">{msg.text}</span>
+              messages.map((msg, i) => {
+                return (
+                  <div key={i}
+                    className={`transition-opacity duration-300 animate-slide-up flex items-start gap-2 ${
+                      // msg.sender === "user"
+                      //   ? "self-end px-4 py-2 rounded-2xl max-w-[70%] bg-[#e0dfff] dark:bg-[#7b4eff]"
+                      //   : "self-start px-4 py-2 rounded-2xl max-w-[70%] text-black bg-white border"
+                      msg.sender === "user"
+                      ? "self-end px-4 py-2 rounded-2xl max-w-[70%] bg-[#7b4eff] text-white dark:bg-[#7b4eff] dark:text-white"
+                      : "self-start px-4 py-2 rounded-2xl max-w-[70%] text-black bg-white border"
 
-                  {/* 🔊 Button for bot messages */}
-                  {msg.sender === "bot" && (
-                    <>
-                      {speakingMessageIndex === i ? (
-                        <button
-                          onClick={() => {
-                            window.speechSynthesis.cancel();
-                            setIsSpeaking(false);
-                            setSpeakingMessageIndex(null);
-                          }}
-                          className="ml-2 text-sm text-red-300 hover:text-red-100"
-                          title="Stop speaking"
-                        >
-                          🔇
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => speakText(msg.text, i)}
-                          className="ml-2 text-sm text-white opacity-70 hover:opacity-100"
-                          title="Speak this message"
-                        >
-                          🔊
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))
+                      }`}
+                  >
+                    {/* <span className="flex-1">{msg.text}</span> */}
+
+                    <div className="flex-1 prose prose-sm dark:prose-invert max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                    </div>
+
+                    {/* 🔊 Button for bot messages */}
+                    {msg.sender === "bot" && (
+                      <>
+                        {speakingMessageIndex === i ? (
+                          <button
+                            onClick={() => {
+                              window.speechSynthesis.cancel();
+                              setIsSpeaking(false);
+                              setSpeakingMessageIndex(null);
+                            } }
+                            className="ml-2 text-sm text-red-300 hover:text-red-100"
+                            title="Stop speaking"
+                          >
+                            🔇
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => speakText(msg.text, i)}
+                            className="ml-2 text-sm text-white opacity-70 hover:opacity-100"
+                            title="Speak this message"
+                          >
+                            🔊
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })
             )}
 
-
-            {/* {isTyping && (
-              <div className="self-start px-4 py-2 rounded-2xl max-w-[70%] text-white bg-[#7b4eff] animate-pulse">
-                GenieX is typing<span className="animate-bounce">...</span>
-              </div>
-            )} */}
+              {/* 🟢 Chat Input Section */}
+              {/* <ChatInput onSend={sendMessage} /> */}
+                    {/* 
+                    BotMsg color -> text-black bg-white border
+                    UserMsg color -> bg-[#e0dfff] dark:bg-[#7b4eff] */}
 
             {isTyping && (
-            <div className="self-start max-w-[70%] px-4 py-2 rounded-2xl bg-[#e0dfff] dark:bg-[#7b4eff] shadow-md">
+            <div className="self-start max-w-[70%] px-4 py-2 rounded-2xl  text-black bg-white border shadow-md">
               <div className="flex gap-2 items-center">
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce delay-0"></div>
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce delay-100"></div>
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce delay-200"></div>
-                <span className="ml-2 text-sm text-white">GenieX is typing...</span>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-0"></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                <span className="ml-2 text-sm">GenieX is typing...</span>
               </div>
             </div>
           )}
@@ -823,18 +907,23 @@ chatTitles
 
                                {/* Input with optional listening animation */}
   <div className="relative flex-1">
-    <input
-      type="text"
-      value={input}
-      onChange={(e) => setInput(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") sendMessage();
-      }}
-      placeholder={isListening ? "🎙 Listening..." : "Type your message..."}
-      className={`w-full px-4 py-2 rounded-2xl border border-lightBorder bg-white text-black dark:bg-botdark dark:text-white transition-all duration-300 ${
-        isListening ? "pl-10 text-purple-600 font-semibold" : ""
-      }`}
-    />
+
+<input
+  type="text"
+  value={input}
+  onChange={(e) => setInput(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();   // stop newline
+      sendMessage();  // 🚀 call your send function
+    }
+  }}
+  placeholder="Type a message..."
+  className={`w-full px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none transition-all duration-300 ${
+    input.length > 0 ? "typing-shimmer" : ""
+  }`}
+/>
+
 
                                     {/* 🎙️ Animated dots if listening */}
     {isListening && (
@@ -855,81 +944,9 @@ chatTitles
   </button>
 </div>
 
-          {/* <div className="flex gap-2 mt-4 transition-all duration-200 items-center">
-   🎤 Mic Button 
-  <button
-    onClick={isListening ? stopListening : startListening}
-    className={`p-2 rounded-full text-white shadow transition-all duration-300
-      ${isListening ? "bg-red-500 animate-pulse" : "bg-blue-500 hover:bg-blue-600"}`}
-    title={isListening ? "Stop Listening" : "Start Listening"}
-  >
-    🎤
-  </button>
 
-   🔊 TTS Test Button 
-  <button
-    onClick={() => speakText("Hello! I'm GenieX. How can I help you today?")}
-    className="p-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition-all"
-    title="Test GenieX Voice"
-  >
-    🔊
-  </button>
-
-   📝 Input Field with Recording UI 
-  <div className="relative flex-1">
-    <input
-      type="text"
-      value={input}
-      onChange={(e) => setInput(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") sendMessage();
-      }}
-      placeholder={isListening ? "🎙 Listening..." : "Type your message..."}
-      className={`w-full px-4 py-2 rounded-2xl border border-lightBorder bg-white text-black dark:bg-botdark dark:text-white transition-all duration-300 ${
-        isListening ? "pl-10 text-purple-600 font-semibold" : ""
-      }`}
-    />
-
-     🎙️ Waveform Animation 
-    {isListening && (
-      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 animate-pulse">
-        <div className="w-1 h-3 bg-purple-500 rounded-full animate-bounce"></div>
-        <div className="w-1 h-5 bg-purple-500 rounded-full animate-bounce delay-100"></div>
-        <div className="w-1 h-4 bg-purple-500 rounded-full animate-bounce delay-200"></div>
-      </div>
-    )}
-  </div>
-
-   Send ➤ Button 
-  <button
-    onClick={sendMessage}
-    className="bg-[#7b4eff] text-white px-4 py-2 rounded-2xl hover:bg-[#673de6] transition-all duration-300"
-  >
-    ➤
-  </button>
-</div> */}
-
-          {/* <div className="flex gap-2 mt-4 transition-all duration-200">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") sendMessage();
-              }}
-              placeholder="Type your message..."
-              className="flex-1 px-4 py-2 rounded-2xl border border-lightBorder bg-white text-black dark:bg-botdark dark:text-white transition-all duration-300"
-            />
-            <button
-              onClick={sendMessage}
-              className="bg-[#7b4eff] text-white px-4 py-2 rounded-2xl hover:bg-[#673de6] transition-all duration-300"
-            >
-              ➤
-            </button>
-          </div> */}
         </main>
 
-{/* setActiveChatId(null);  */}
         {/* Right Slider Nav */}
 <div
   className={`fixed top-0 right-0 h-full w-64 bg-[#e1e7ff] dark:bg-[#1e1e2e] border-l border-gray-300 dark:border-gray-700 
@@ -983,7 +1000,7 @@ chatTitles
 
              {/* ----------------------------------------------------------------------------
                                  Selecting Language
-              ------------------------------------------------------------------------------ */}
+              -----------------------------------0------------------------------------------- */}
 
                 <input type="checkbox" id="theme-toggle" className="sr-only peer" onChange={toggleTheme} />
                               <div className="mb-4">
@@ -1097,11 +1114,10 @@ chatTitles
 
 const container = document.getElementById("root");
 
+
   const root = ReactDOM.createRoot(container);
   root.render(
     <React.StrictMode>
       <App />
     </React.StrictMode>
   );
-
-

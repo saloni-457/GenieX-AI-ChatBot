@@ -15,6 +15,8 @@ module.exports = {
         lightText: '#2e2e2e',
         lightBorder: '#e3e8f0',
         lightPurple: '#8C6EFF',
+        'geniex-purple': '#3a0ca3',
+
 
 
         // Dark Theme (Enhanced modern)
@@ -26,9 +28,14 @@ module.exports = {
 
 
         // Message Bubble Colors
-        botPurple: '#8C6EFF',
-        userWhite: '#ffffff',
-        userBorder: '#d1d5db',
+        // botPurple: '#8C6EFF',
+        // userWhite: '#ffffff',
+        // userBorder: '#d1d5db',
+                
+        // Message Bubble Colors (Swapped!)
+        botPurple: '#ffffff',   // Bot now uses white bubbles
+        userWhite: '#8C6EFF',   // User now uses purple bubbles
+        userBorder: '#d1d5db',  // You can keep or adjust this
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

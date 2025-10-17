@@ -1,77 +1,69 @@
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from flask_pymongo import PyMongo
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from deep_translator import GoogleTranslator as Translator
 from dotenv import load_dotenv
-from bson import SON
 import re
-
-
 import os
 import time
 import traceback
 
-from flask_cors import CORS
+import google.generativeai as genai
 
+# Load environment
 load_dotenv()
 
 app = Flask(__name__)
-
-
 CORS(app, resources={r"/*": {
     "origins": ["http://localhost:5173", "https://genix-frontend.netlify.app"],
     "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     "allow_headers": ["Content-Type", "Authorization"]
 }})
 
-import google.generativeai as genai
-
-from bson import ObjectId
-
+# Configs
 gem_api_key = os.getenv("API_KEY")
 jwt_secret = os.getenv("JWT_SECRET")
 mongo_uri = os.getenv("MONGO_URI")
 
-# app = Flask(__name__)
 app.config["MONGO_URI"] = mongo_uri
 mongo = PyMongo(app)
-
-# print("Gemini API:", gem_api_key)
-
-CORS(app, origins=["http://localhost:5173", "https://genix-frontend.netlify.app"])
-
-
 chats_collection = mongo.db.chats
 
-# Fix chats with missing folder
-chats_collection.update_many(
-    {"folder": {"$in": [None, ""]}},
-    {"$set": {"folder": "All"}}
-)
-# AIzaSyBUi7sM5_uVG_2cV9KRrFf7evB1qWhYlP4
-# Helper: list models (kept above initialization so we can call it during setup)
+# Ensure folder field exists for older records
+try:
+    chats_collection.update_many(
+        {"folder": {"$in": [None, ""]}},
+        {"$set": {"folder": "All"}}
+    )
+except Exception:
+    # Non-fatal if DB not reachable at startup
+    print("⚠️ Could not update existing chat documents (DB may be offline)")
+
+
+# ----------------------
+# Generative AI helpers
+# ----------------------
+
 def list_available_models():
-    """Try to list available models from the genai SDK and return a readable result.
-    This is intentionally defensive because SDK versions differ in method names.
-    """
+    """Return the raw result of SDK model listing (defensive across SDK versions)."""
     try:
         if hasattr(genai, "list_models"):
-            result = genai.list_models()
-        elif hasattr(genai, "Models") and hasattr(genai.Models, "list"):
-            result = genai.Models.list()
-        else:
-            # Fallback: try to call an undocumented method and return its string
-            result = getattr(genai, "list_models", lambda: None)()
-
-        return result
+            return genai.list_models()
+        if hasattr(genai, "Models") and hasattr(genai.Models, "list"):
+            return genai.Models.list()
+        # Last resort: return dir for debugging
+        return {"dir": dir(genai)}
     except Exception as e:
-        print("❌ Error listing models:", str(e))
+        print("❌ Error listing models:", e)
         print(traceback.format_exc())
         return None
 
 
-# Gemini API setup with fallback
+# Initialize model with fallback
 model = None
 try:
     if not gem_api_key:
@@ -79,19 +71,17 @@ try:
 
     genai.configure(api_key=gem_api_key)
 
-    # Preferred model can be overridden via env var MODEL_NAME for local testing
     preferred_model = os.getenv("MODEL_NAME", "gemini-2.5-flash")
     try:
         model = genai.GenerativeModel(preferred_model)
         print(f"✅ Initialized preferred model: {preferred_model}")
     except Exception as init_err:
-        print("❌ Error initializing preferred Gemini model:", str(init_err))
+        print("❌ Error initializing preferred Gemini model:", init_err)
         print(traceback.format_exc())
-        # Attempt fallback: query available models and try to pick a compatible one
         models = list_available_models()
         candidates = []
         if models:
-            # Try to extract candidate model names robustly
+            # Try to extract candidate model names
             try:
                 if isinstance(models, list):
                     for m in models:
@@ -101,24 +91,15 @@ try:
                                     candidates.append(m[key])
                         elif isinstance(m, str) and "gemini" in m.lower():
                             candidates.append(m)
-                elif isinstance(models, dict):
-                    # Sometimes SDK returns dict with nested lists
-                    txt = str(models)
-                    import re
-                    found = re.findall(r"(gemini[\w\-\.\/_]*)", txt, flags=re.IGNORECASE)
-                    candidates.extend(found)
                 else:
                     txt = str(models)
-                    import re
                     found = re.findall(r"(gemini[\w\-\.\/_]*)", txt, flags=re.IGNORECASE)
                     candidates.extend(found)
             except Exception:
-                print("⚠️ Could not parse models list; falling back to string search")
                 txt = str(models)
-                import re
                 candidates = re.findall(r"(gemini[\w\-\.\/_]*)", txt, flags=re.IGNORECASE)
 
-        # De-duplicate candidates
+        # Try candidates
         candidates = list(dict.fromkeys(candidates))
         for cand in candidates:
             try:
@@ -138,30 +119,6 @@ except Exception as e:
     model = None
 
 
-# def list_available_models():
-#     """Try to list available models from the genai SDK and return a readable result.
-#     This is intentionally defensive because SDK versions differ in method names.
-#     """
-#     try:
-#         if hasattr(genai, "list_models"):
-#             result = genai.list_models()
-#         elif hasattr(genai, "Models") and hasattr(genai.Models, "list"):
-#             result = genai.Models.list()
-#         else:
-#             # Fallback: try to call an undocumented method and return its string
-#             result = getattr(genai, "list_models", lambda: None)()
-
-#         # Convert to a readable string if necessary
-#         try:
-#             return result if isinstance(result, (list, dict)) else str(result)
-#         except Exception:
-#             return str(result)
-#     except Exception as e:
-#         print("❌ Error listing models:", str(e))
-#         print(traceback.format_exc())
-#         return None
-
-
 @app.route('/list-models', methods=['GET'])
 def list_models_route():
     models = list_available_models()
@@ -170,6 +127,9 @@ def list_models_route():
     return jsonify({"models": models}), 200
 
 
+# ----------------------
+# Chat endpoint
+# ----------------------
 @app.route("/chat", methods=["POST"])
 def chatbot_response():
     try:
@@ -185,7 +145,6 @@ def chatbot_response():
         if not user_message:
             return jsonify({"error": "Missing message"}), 400
 
-        # Language mapping
         lang_map = {
             "en": "English",
             "hi": "Hindi",
@@ -197,128 +156,59 @@ def chatbot_response():
         src_lang = lang_map.get(language, "English")
         dest_lang = "English"
 
-        # # 🔁 Translate user message to English if needed
+        # Translate user message to English if needed
         if language != "en":
             translator = Translator(source=src_lang.lower(), target=dest_lang.lower())
             user_message = translator.translate(user_message)
 
-        # 🎯 Construct Gemini prompt
+        # Build prompt
+        formatted_prompt = f"""
+You are GenieX, an intelligent tutor and mentor.\nAlways reply in {src_lang} language.\n\nUser asked: {user_message}\n"""
 
-        # formatted_prompt = f"""
-        # You are **GenieX**, an intelligent, friendly and expressive AI assistant modeled after ChatGPT.
+        generation_config = {
+            "temperature": 0.7,
+            "top_p": 0.95,
+            "top_k": 40,
+            "max_output_tokens": 500,
+        }
 
-        # 🎯 **Your Goal:**
-        # - Always respond to the user's message naturally, intelligently, warmth, and structured formatting beautifully — just like ChatGPT. 
-        # - Always add **a blank line** between paragraphs, lists, or major sections.  
-        # - Use `---` (horizontal line) to separate main sections.  
-        # - Avoid long walls of text — break ideas into neat, readable chunks.  
-        # - Use whitespace generously to make responses breathable and clean.
-        # - Format all responses using **Markdown**, with proper spacing, emojis (when suitable), section dividers (`---`), and bold or italic emphasis.
-        # - Add **proper spacing**, **line breaks**, and **empty lines** between paragraphs or sections for readability.  
-        # - Every reply must feel natural, beautifully spaced, and visually clean to read.
+        print("Prompt sent to Gemini:\n", formatted_prompt)
 
+        if model is None:
+            err_msg = "AI model not available. Check API_KEY and model availability."
+            print("❌", err_msg)
+            return jsonify({"error": err_msg}), 502
 
-        # ---
+        # Prefer generate_content if available
+        try:
+            response = model.generate_content(formatted_prompt, generation_config=generation_config)
+        except TypeError:
+            # Some SDK versions use different signatures
+            response = model.generate_content(formatted_prompt)
 
-        # ### 🧩 **Response Style Rules:**
-        
-        # 1. **Spacing & Layout**
-        # - Always add **line breaks** between sections, lists, or paragraphs.  
-        # - Avoid clutter — keep everything neatly spaced.  
-        # - Leave an empty line between the intro, main points, and closing.  
-        # - Do **not** write long walls of text — break them into readable chunks.
+        if not hasattr(response, "text") or not response.text:
+            print("⚠️ Gemini did not return text, as this is the error", response)
+            return jsonify({"error": "Gemini did not return any response"}), 500
 
-        # 2. Always understand the **intent** of the user’s message before replying.  
-        # - If they ask for a list → use numbered or bulleted Markdown lists.  
-        # - If they want help or explanation → write clearly, use examples or steps.  
-        # - If they share emotions → reply empathetically and friendly.  
-        # - If it’s a technical or code query → show formatted code blocks with ```language```.  
-        # - If it’s a creative request (songs, ideas, motivation) → use expressive, warm tone with emojis.  
+        # Clean response
+        bot_reply = response.text.strip()
+        bot_reply = re.sub(r"\*\*(.*?)\*\*", r"\1", bot_reply)
+        bot_reply = re.sub(r"[*_`~]", "", bot_reply)
+        bot_reply = re.sub(r"\n{2,}", "\n", bot_reply)
+        bot_reply = re.sub(r"^\s*\*\s+", "• ", bot_reply, flags=re.MULTILINE)
 
-        # 3. Structure replies like ChatGPT:
-        # - Start with a short engaging intro (often with an emoji 🎯✨💡🎶 etc.)
-        # - Use `###` for section headers.
-        # - Use `---` between major sections.
-        # - Use **bold** and _italic_ emphasis.
-        # - Use ✅, ⚡, 💡, 💬, ❤️, etc. where relevant.
-        # - End politely or encouragingly (“Hope this helps!”, “Would you like me to refine it further?”)
+        # Translate back to user's language if needed
+        if language != "en":
+            translator = Translator(source=dest_lang.lower(), target=src_lang.lower())
+            bot_reply = translator.translate(bot_reply)
 
-        # 3. Keep tone:
-        # - Professional when explaining.
-        # - Conversational when chatting.
-        # - Empathetic when personal.
-        # - Motivating when user sounds low.
-        # - Sound like a confident, human-like expert — never robotic.  
-        # - Don’t repeat unnecessary words or headings.  
-        # - Never mention “ChatGPT” or “AI model.”  
-        # - Avoid disclaimers like “As an AI model…”. You are **GenieX**. 
+        print("Final bot reply:", bot_reply)
+        return jsonify({"response": bot_reply})
 
-        # 4. Never say “As an AI language model…”  
-        # You are **GenieX**, a confident, smart conversational partner.
-
-        # ---
-
-        # Now generate a beautifully formatted, engaging, ChatGPT-style reply following the above tone and structure.
-
-
-        # 🗣️ **User message:**  
-        # {user_message}
-
-        # """
-
-
-        # generation_config = {
-        # "temperature": 0.95,
-        # "top_p": 0.9,
-        # "top_k": 40,
-        # "max_output_tokens": 1200,
-        # }
-
-        # formatted_prompt = f"""
-        # You are **GenieX**, an intelligent, friendly and expressive AI assistant modeled after ChatGPT.
-
-        # 🎯 **Your Goal:**
-        # Always respond to the user's message naturally, intelligently, warmth, and structured formatting beautifully — just like ChatGPT. 
-        # Format all responses using **Markdown**, with proper spacing, emojis (when suitable), section dividers (`---`), and bold or italic emphasis.
-        # Add **proper spacing**, **line breaks**, and **empty lines** between paragraphs or sections for readability.  
-        # Every reply must feel natural, beautifully spaced, and visually clean to read.
-
-
-        # ---
-
-        # ### 🧩 **Response Style Rules:**
-        
-        # 1. **Spacing & Layout**
-        # - Always add **line breaks** between sections, lists, or paragraphs.  
-        # - Avoid clutter — keep everything neatly spaced.  
-        # - Leave an empty line between the intro, main points, and closing.  
-        # - Do **not** write long walls of text — break them into readable chunks.
-
-        # 2. Always understand the **intent** of the user’s message before replying.  
-        # - If they ask for a list → use numbered or bulleted Markdown lists.  
-        # - If they want help or explanation → write clearly, use examples or steps.  
-        # - If they share emotions → reply empathetically and friendly.  
-        # - If it’s a technical or code query → show formatted code blocks with ```language```.  
-        # - If it’s a creative request (songs, ideas, motivation) → use expressive, warm tone with emojis.  
-
-        # 3. Structure replies like ChatGPT:
-        # - Start with a short engaging intro (often with an emoji 🎯✨💡🎶 etc.)
-        # - Use `###` for section headers.
-        # - Use `---` between major sections.
-        # - Use **bold** and _italic_ emphasis.
-        # - Use ✅, ⚡, 💡, 💬, ❤️, etc. where relevant.
-        # - End politely or encouragingly (“Hope this helps!”, “Would you like me to refine it further?”)
-
-        # 3. Keep tone:
-        # - Professional when explaining.
-        # - Conversational when chatting.
-        # - Empathetic when personal.
-        # - Motivating when user sounds low.
-        # - Sound like a confident, human-like expert — never robotic.  
-        # - Don’t repeat unnecessary words or headings.  
-        # - Never mention “ChatGPT” or “AI model.”  
-
-        # - Avoid disclaimers like “As an AI model…”. You are **GenieX**. 
+    except Exception as e:
+        print("❌ Error in /chat route:", str(e))
+        print(traceback.format_exc())
+        return jsonify({"error": "Translation or AI error occurred", "details": str(e)}), 500
 
         # 4. Never say “As an AI language model…”  
         # You are **GenieX**, a confident, smart conversational partner.
@@ -663,170 +553,32 @@ def chatbot_response():
 # ----------------------------------------
 
 
-# @app.route("/save-chat", methods=["POST"])
-# def save_chat():
-#     try:
-#         data = request.get_json()
-
-#         user_id = data.get("userId")
-#         messages = data.get("messages", [])
-#         timestamp = data.get("timestamp") or int(time.time() * 1000)
-#         folder = data.get("folder", "Default")
-#         chat_id = data.get("chatId")  # ✅ added
-
-#         if not user_id:
-#             return jsonify({"error": "Missing userId"}), 400
-
-#         if not messages:
-#             messages = [{"role": "system", "content": "Empty Chat"}]
-
-#         # Generate a title from first user message
-#         title = messages[0].get("content", "Untitled Chat")[:30] if messages else "Untitled Chat"
-
-#         if chat_id:
-#             # ✅ Update existing chat
-#             result = chats_collection.update_one(
-#                 {"_id": ObjectId(chat_id)},
-#                 {"$set": {
-#                     "messages": messages,
-#                     "timestamp": timestamp,
-#                     "folder": folder,
-#                     "title": title
-#                 }}
-#             )
-#             if result.modified_count > 0:
-#                 return jsonify({
-#                     "message": "Chat updated successfully",
-#                     "chatId": chat_id
-#                 }), 200
-#             else:
-#                 return jsonify({
-#                     "message": "No changes (chat unchanged)",
-#                     "chatId": chat_id
-#                 }), 200
-
-#         else:
-#             # ✅ Create new chat
-#             new_chat = {
-#                 "userId": user_id,
-#                 "title": title,
-#                 "messages": messages,
-#                 "timestamp": timestamp,
-#                 "folder": folder
-#             }
-#             result = chats_collection.insert_one(new_chat)
-#             return jsonify({
-#                 "message": "Chat saved successfully",
-#                 "chatId": str(result.inserted_id)
-#             }), 201
-
-#     except Exception as e:
-#         print("❌ Error in /save-chat:", e)
-#         print(traceback.format_exc())
-#         return jsonify({"error": str(e)}), 500
-
-
-
 @app.route("/save-chat", methods=["POST"])
 def save_chat():
-    try:
-        data = request.get_json(force=True)
+    data = request.get_json()
+    user_id = data.get("userId")
+    messages = data.get("messages")
+    timestamp = data.get("timestamp")
+    folder = data.get("folder", "Default")  # ✅ NEW: get folder from request
 
-        user_id = data.get("userId")
-        messages = data.get("messages", [])
-        timestamp = data.get("timestamp") or int(time.time() * 1000)
-        folder = data.get("folder", "Default")
-        chat_id = data.get("chatId")
+    if not (user_id and messages):
+        return jsonify({"error": "Missing data"}), 400
 
-        print("📩 Incoming /save-chat data:", data)
+    # Use first user message as title
+    title = messages[0]["text"][:30] if messages else "Untitled Chat"
 
-        if not user_id:
-            return jsonify({"error": "Missing userId"}), 400
+    folder = data.get("folder", "Default")  # default 
+    chat = {
+        "userId": user_id,
+        "title": title,
+        "messages": messages,
+        "timestamp": timestamp or int(time.time() * 1000),
+        "folder": folder  # ✅ ADDED HERE
+    }
 
-        if not messages:
-            messages = [{"role": "system", "content": "Empty Chat"}]
+    result = chats_collection.insert_one(chat)
+    return jsonify({"message": "Chat saved", "chatId": str(result.inserted_id)})
 
-        # Safe title
-        first_msg = messages[0] if len(messages) > 0 else {}
-        title = first_msg.get("content", "Untitled Chat")[:30]
-
-        if chat_id:
-            try:
-                result = chats_collection.update_one(
-                    {"_id": ObjectId(chat_id)},
-                    {"$set": {
-                        "messages": messages,
-                        "timestamp": timestamp,
-                        "folder": folder,
-                        "title": title
-                    }}
-                )
-                print("✅ Updated chat:", chat_id)
-                return jsonify({
-                    "message": "Chat updated successfully",
-                    "chatId": chat_id
-                }), 200
-            except Exception as e:
-                print("⚠️ Error updating chat:", e)
-                return jsonify({"error": str(e)}), 500
-
-        else:
-            new_chat = {
-                "userId": user_id,
-                "title": title,
-                "messages": messages,
-                "timestamp": timestamp,
-                "folder": folder
-            }
-            result = chats_collection.insert_one(new_chat)
-            print("✅ New chat inserted:", result.inserted_id)
-            return jsonify({
-                "message": "Chat saved successfully",
-                "chatId": str(result.inserted_id)
-            }), 201
-
-    except Exception as e:
-        print("❌ Error in /save-chat:", e)
-        print(traceback.format_exc())
-        return jsonify({"error": str(e)}), 500
-
-
-# @app.route("/save-chat", methods=["POST"])
-# def save_chat():
-#     data = request.get_json()
-
-#     # Extract fields safely
-#     user_id = data.get("userId")
-#     messages = data.get("messages", [])
-#     timestamp = data.get("timestamp") or int(time.time() * 1000)
-#     folder = data.get("folder", "Default")
-
-#     # Validate required fields
-#     if not user_id:
-#         return jsonify({"error": "Missing userId or messages"}), 400
-
-#     if not messages:
-#         messages = [{"role": "system", "content": "Empty Chat"}]
-    
-#     # Use first user message as chat title (fallback if empty)
-#     title = messages[0].get("content", "Untitled Chat")[:30] if messages else "Untitled Chat"
-
-#     chat = {
-#         "userId": user_id,
-#         "title": title,
-#         "messages": messages,
-#         "timestamp": timestamp,
-#         "folder": folder
-#     }
-
-#     try:
-#         result = chats_collection.insert_one(chat)
-#         return jsonify({
-#             "message": "Chat saved successfully",
-#             "chatId": str(result.inserted_id)
-#         }), 201
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
 
 # ----------------------------------------
 # ✅ 3. GET /get-chats/<user_id> - Full chats
